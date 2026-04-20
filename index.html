@@ -415,6 +415,50 @@ body {
 .c-btn.red { background: var(--red-bg); border-color: rgba(248,113,113,.3); color: var(--red); }
 .c-btn.red:hover { background: var(--red); color: #fff; border-color: var(--red); }
 
+/* ── AI Video Bot Layout (Simli) ── */
+.call-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.call-timer-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 100px; padding: 4px 12px;
+}
+.timer-text { font-family: 'Geist Mono', monospace; font-size: 12px; color: #fff; letter-spacing: 0.05em; }
+.call-agent-label { font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 0.02em; }
+.ss-badge { font-size: 11px; color: var(--green); background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); border-radius: 100px; padding: 3px 10px; }
+
+.video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 14px; margin-top: 10px; }
+.video-panel { position: relative; aspect-ratio: 3/4; background: #0A0A14; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); }
+.panel-label { position: absolute; bottom: 10px; left: 10px; display: flex; align-items: center; gap: 5px; background: rgba(0,0,0,0.55); backdrop-filter: blur(8px); border-radius: 100px; padding: 4px 10px; font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 500; z-index: 2; }
+.panel-dot { width: 6px; height: 6px; border-radius: 50%; }
+.ai-dot { background: var(--purple); }
+.user-dot { background: var(--green); }
+.speaking-ring { position: absolute; inset: 0; border-radius: 14px; border: 2px solid transparent; transition: border-color 0.2s; pointer-events: none; z-index: 3; }
+.speaking-ring.active-ai { border-color: var(--purple); box-shadow: inset 0 0 20px rgba(124,58,237,0.2); }
+.speaking-ring.active-user { border-color: var(--green); box-shadow: inset 0 0 20px rgba(34,197,94,0.15); }
+.cam-overlay { position: absolute; inset: 0; background: #0A0A14; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; z-index: 1; }
+.cam-avatar { font-size: 40px; }
+.cam-overlay span { font-size: 12px; color: rgba(255,255,255,0.3); }
+
+.transcript-strip { margin: 10px 14px 0; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 10px 14px; height: 64px; overflow-y: auto; }
+.transcript-inner { display: flex; flex-direction: column; gap: 6px; }
+.t-line-v { font-size: 12px; line-height: 1.45; }
+.t-line-v .role { font-weight: 600; margin-right: 6px; }
+.t-line-v.ai .role { color: var(--purple-accent); }
+.t-line-v.user .role { color: var(--green); }
+.t-line-v .text { color: rgba(255,255,255,0.55); }
+
+.video-controls { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 14px 16px 18px; }
+.ctrl-btn { display: flex; flex-direction: column; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 10px 14px; cursor: pointer; font-size: 10px; color: rgba(255,255,255,0.4); transition: all 0.15s; letter-spacing: 0.03em; min-width: 54px; }
+.ctrl-btn:hover { background: rgba(255,255,255,0.09); }
+.ctrl-btn svg { width: 18px; height: 18px; }
+.ctrl-btn.active { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.3); color: #EF4444; }
+.human-btn-v { background: rgba(124,58,237,0.1); border-color: rgba(124,58,237,0.3); color: var(--purple-accent); }
+.end-btn-v { background: var(--purple); border-color: var(--purple); color: #fff; padding: 12px 18px; border-radius: 16px; font-weight: 600; }
+.end-btn-v:hover { background: #6D28D9; }
+
 /* ════════════════════════════════════
    SCREEN 4 — ENDED
 ════════════════════════════════════ */
@@ -620,62 +664,80 @@ body {
   <!-- ── Screen 3: Call ── -->
   <div id="screen-call" class="screen hidden">
 
-    <div class="call-bar">
-      <div class="call-live"><span></span> LIVE</div>
-      <div class="call-timer" id="call-timer">00:00</div>
-      <div class="call-badge">HD Audio</div>
-    </div>
-
-    <div class="avatar-zone">
-      <div class="avatar-wrap" id="av-wrap">
-        <div class="avatar-ring avatar-ring-1"></div>
-        <div class="avatar-ring avatar-ring-2"></div>
-        <div class="avatar-ring avatar-ring-3"></div>
-        <div class="avatar-core">🤖</div>
+    <!-- Top bar -->
+    <div class="call-topbar">
+      <div class="call-timer-pill">
+        <div class="online-dot"></div>
+        <span id="call-timer" class="timer-text">00:00</span>
       </div>
-      <div class="agent-name">AI Support Agent</div>
-      <div class="agent-state">
-        <div class="state-dot listening" id="state-dot"></div>
-        <span id="state-txt">Listening…</span>
-      </div>
-      <div class="waveform" id="waveform">
-        <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
-        <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
-        <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+      <div class="call-agent-label">Aria · AI Support</div>
+      <div id="screenshare-badge" style="display:none" class="ss-badge">
+        ● Screen Sharing
       </div>
     </div>
 
-    <div class="transcript-wrap">
-      <div class="transcript-label">Live transcript</div>
-      <div class="transcript-box" id="transcript-box">
-        <div class="t-empty" id="t-empty">Conversation will appear here…</div>
+    <!-- TWO VIDEO PANELS -->
+    <div class="video-grid">
+      <!-- LEFT: AI Avatar (Simli) -->
+      <div class="video-panel ai-panel">
+        <video id="simli-video" autoplay playsinline style="width:100%;height:100%;object-fit:cover;border-radius:14px"></video>
+        <audio id="simli-audio" autoplay></audio>
+        <div class="panel-label">
+          <span class="panel-dot ai-dot"></span>
+          Aria
+        </div>
+        <div id="ai-speaking-ring" class="speaking-ring"></div>
+      </div>
+
+      <!-- RIGHT: User Camera -->
+      <div class="video-panel user-panel">
+        <video id="user-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;border-radius:14px;transform:scaleX(-1)"></video>
+        <div class="panel-label">
+          <span class="panel-dot user-dot"></span>
+          You
+        </div>
+        <div id="user-speaking-ring" class="speaking-ring"></div>
+        <div id="cam-off-overlay" class="cam-overlay" style="display:none">
+          <div class="cam-avatar">👤</div>
+          <span>Camera off</span>
+        </div>
       </div>
     </div>
 
-    <div class="call-controls">
-      <!-- Mute -->
-      <button class="c-btn" id="btn-mute" onclick="toggleMute()" title="Mute">
+    <!-- Live Transcript (collapsible strip) -->
+    <div id="transcript-strip" class="transcript-strip">
+      <div id="transcript-box" class="transcript-inner">
+        <div id="t-empty" class="t-empty">Conversation starting...</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="video-controls">
+      <button class="ctrl-btn" id="btn-mute" onclick="toggleMute()" title="Mute">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
         </svg>
         <span class="lbl">Mute</span>
       </button>
-      <!-- Screen share -->
-      <button class="c-btn" id="btn-screen" onclick="toggleScreen()" title="Share screen">
+      <button class="ctrl-btn" id="btn-cam" onclick="toggleCamera()" title="Toggle Camera">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+        </svg>
+        <span class="lbl">Camera</span>
+      </button>
+      <button class="ctrl-btn" id="btn-screen" onclick="toggleScreen()" title="Share screen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
         </svg>
         <span class="lbl">Screen</span>
       </button>
-      <!-- Human -->
-      <button class="c-btn" id="btn-human" onclick="escalateHuman()" title="Talk to human">
+      <button class="ctrl-btn human-btn-v" id="btn-human" onclick="escalateHuman()" title="Talk to human">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
         </svg>
         <span class="lbl">Human</span>
       </button>
-      <!-- End call -->
-      <button class="c-btn red" onclick="endCall()" title="End call">
+      <button class="ctrl-btn end-btn-v" onclick="endCall()" title="End call">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45c.96.337 1.96.537 2.97.595A2 2 0 0122 17.92v3a2 2 0 01-2.18 2A19.79 19.79 0 012 5.18 2 2 0 013.93 3H7a2 2 0 011.72 2.72 13 13 0 00-.7 2.81 2 2 0 01-.45 2.11z"/>
         </svg>
@@ -730,25 +792,61 @@ body {
      JAVASCRIPT
 ══════════════════════════════ -->
 <script>
-// ─── Constants & State ─────────────────────────────────────
-const DG_KEY   = window.VOICERA_CONFIG.DG_KEY;
-const SB_URL   = window.VOICERA_CONFIG.SB_URL;
-const SB_KEY   = window.VOICERA_CONFIG.SB_KEY;
+// ─── UI Controls (Hoistable & Safe) ────────────────────────
+let dark = true;
+function toggleTheme() {
+  dark = !dark;
+  document.body.classList.toggle('light', !dark);
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = dark ? '☀️ Light' : '🌙 Dark';
+}
 
-// Initialize Supabase
-const supabase = supabase.createClient(SB_URL, SB_KEY);
-const DG_WS     = "wss://agent.deepgram.com/v1/agent/converse";
+let wOpen = false;
+function toggleWidget() { wOpen ? closeWidget() : openWidget(); }
+function openWidget()  { wOpen = true;  const p = document.getElementById('w-popup'); if (p) p.classList.remove('hidden'); }
+function closeWidget() { wOpen = false; const p = document.getElementById('w-popup'); if (p) p.classList.add('hidden'); }
+
+function restartWidget() {
+  transferring = false;
+  userData = {};
+  transcriptLog = [];
+  callSecs = 0;
+  exchangeCount = 0;
+  isResolved = false;
+  sentiment = 'neutral';
+  callSummary = '';
+  showScreen('intake');
+}
+
+// ─── Constants & State ─────────────────────────────────────
+const CONFIG = window.VOICERA_CONFIG || {};
+const DG_KEY = CONFIG.DG_KEY || '';
+const SB_URL = CONFIG.SB_URL || '';
+const SB_KEY = CONFIG.SB_KEY || '';
+const SIMLI_API_KEY = CONFIG.SIMLI_API_KEY || '';
+const SIMLI_FACE_ID = CONFIG.SIMLI_FACE_ID || '';
+
+// Database Client (disabled per user request)
+let dbClient = null;
+try {
+   // if (window.supabase) dbClient = window.supabase.createClient(SB_URL, SB_KEY);
+} catch(e) { console.error("DB init failed", e); }
+
+const DG_WS = "wss://agent.deepgram.com/v1/agent/converse";
+
+// ─── Simli State ──────────────────────────────────────────
+let simliClient = null;
+let userVideoStream = null;
+let cameraOn = true;
+let simliReady = false;
 
 // ─── State ────────────────────────────────────────────────
 let userData    = {};
-let wOpen       = false;
 let socket      = null;
 let micStream   = null;
 let captureCtx  = null;
 let proc        = null;
 let mute        = null;
-let playCtx     = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
-let nextPlay    = 0;
 let timerID     = null;
 let callSecs    = 0;
 let isMuted     = false;
@@ -759,8 +857,7 @@ let isTestMode  = false;
 let mockInterval = null;
 let keepAliveTimer = null;
 let transferring = false;
-
-// Version 2 state
+// Version 2 state persistence
 let exchangeCount = 0;
 let silenceTimer  = null;
 let isResolved    = false;
@@ -775,18 +872,7 @@ const escalationTriggers = [
   "lawyer", "cancel my account", "this is the third time", "still not working"
 ];
 
-// ─── Theme ────────────────────────────────────────────────
-let dark = true;
-function toggleTheme() {
-  dark = !dark;
-  document.body.classList.toggle('light', !dark);
-  document.getElementById('theme-btn').textContent = dark ? '☀️ Light' : '🌙 Dark';
-}
-
-// ─── Widget open/close ────────────────────────────────────
-function toggleWidget() { wOpen ? closeWidget() : openWidget(); }
-function openWidget()  { wOpen = true;  document.getElementById('w-popup').classList.remove('hidden'); }
-function closeWidget() { wOpen = false; document.getElementById('w-popup').classList.add('hidden'); }
+// ─── Navigation ───────────────────────────────────────────
 
 function showScreen(name) {
   ['intake','connecting','call','ended'].forEach(s => {
@@ -870,7 +956,7 @@ async function startCall(e) {
   }
 }
 
-// ─── Deepgram connect ─────────────────────────────────────
+// ─── Connection Flow (Deepgram + Simli) ───────────────────
 async function connect() {
   if (isTestMode) {
     updateStatus('Connected ✓ — Starting mock mode…');
@@ -879,85 +965,103 @@ async function connect() {
     return;
   }
 
-  updateStatus('Checking browser support…');
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    throw new Error("Your browser does not support audio capture.");
-  }
-
-  updateStatus('Requesting microphone access…');
+  // --- 1. ACQUIRE CAMERA + MIC ---
+  updateStatus('Requesting camera & microphone...');
   try {
-    micStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      }
+    userVideoStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 1280, height: 720, facingMode: 'user' },
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
     });
-  } catch (e) {
-    if (e.name === 'NotAllowedError') {
-      throw new Error("🎙️ Microphone access was denied.\n\nClick the 🔒 lock icon in your browser address bar → Allow microphone → then click Go Back and try again.");
-    }
-    throw e;
+  } catch(err) {
+    console.error('Media access error:', err);
+    showError('Camera/microphone access denied. Please allow both and try again.');
+    return;
   }
 
-  updateStatus('Microphone ready ✓ — Connecting to Deepgram…');
-  socket = new WebSocket(DG_WS, ["token", DG_KEY]);
-  socket.binaryType = "arraybuffer";
+  // Show user camera
+  const uv = document.getElementById('user-video');
+  if (uv) uv.srcObject = userVideoStream;
+  
+  // Extract audio-only stream for Deepgram capture
+  micStream = new MediaStream(userVideoStream.getAudioTracks());
 
-  await new Promise((resolve, reject) => {
-    socket.onopen  = resolve;
-    socket.onerror = () => reject(new Error(`🔌 Could not connect to AI service.\n\nCheck: (1) your internet connection, (2) that the Deepgram API key is valid.\n\nAPI key used: ${DG_KEY.substring(0, 8)}...`));
-    setTimeout(() => reject(new Error('Connection timeout')), 10000);
-  });
+  // --- 2. INITIALIZE SIMLI (v3 SDK — token + ICE + LiveKit) ---
+  updateStatus('Connecting AI avatar...');
+  try {
+    await Promise.race([
+      (async () => {
+        const { SimliClient, generateSimliSessionToken, generateIceServers } = await import('https://cdn.jsdelivr.net/npm/simli-client@3.0.1/+esm');
 
-  updateStatus('Connected ✓ — Starting AI agent…');
-  // Send config
-  socket.send(JSON.stringify({
-    type: "Settings",
-    audio: {
-      input:  { encoding: "linear16", sample_rate: 16000 },
-      output: { encoding: "linear16", sample_rate: 24000, container: "none" }
-    },
-    agent: {
-      listen: {
-        provider: { 
-          type: "deepgram", 
-          model: "nova-2",
-          smart_format: true,
-          language: "en"
-        }
+        // 1. Get session token from Simli API
+        const sessionData = await generateSimliSessionToken({
+          apiKey: SIMLI_API_KEY,
+          config: { faceId: SIMLI_FACE_ID, syncAudio: true }
+        });
+        console.log('✅ Simli session token acquired');
+
+        // 2. Get ICE servers for WebRTC
+        const iceServers = await generateIceServers(SIMLI_API_KEY);
+        console.log('✅ ICE servers acquired');
+
+        // 3. Create client with v3 constructor(token, video, audio, ice)
+        const videoEl = document.getElementById('simli-video');
+        const audioEl = document.getElementById('simli-audio');
+        simliClient = new SimliClient(sessionData.session_token, videoEl, audioEl, iceServers);
+
+        // 4. Start the WebRTC connection
+        await simliClient.start();
+        simliReady = true;
+        console.log('✅ Simli avatar ready');
+      })(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Simli Init Timeout')), 15000))
+    ]);
+  } catch(err) {
+    console.warn('Simli failed, continuing audio-only:', err);
+  }
+
+  // --- 3. CONNECT DEEPGRAM ---
+  updateStatus('Connecting AI voice...');
+  try {
+    socket = new WebSocket(DG_WS, ["token", DG_KEY]);
+    socket.binaryType = "arraybuffer";
+
+    await new Promise((resolve, reject) => {
+      socket.onopen  = resolve;
+      socket.onerror = () => reject(new Error('Deepgram connection failed'));
+      setTimeout(() => reject(new Error('Connection timeout')), 10000);
+    });
+
+    socket.send(JSON.stringify({
+      type: "Settings",
+      audio: {
+        input:  { encoding: "linear16", sample_rate: 16000 },
+        output: { encoding: "linear16", sample_rate: 16000 } // CRITICAL: 16kHz for Simli
       },
-      think: {
-        provider: { type: "open_ai", model: "gpt-4o-mini" },
-        prompt: buildPrompt()
-      },
-      speak: {
-        provider: { type: "deepgram", model: "aura-2-thalia-en" }
+      agent: {
+        listen: { provider: { type: "deepgram", model: "nova-2", smart_format: true } },
+        think: { provider: { type: "open_ai", model: "gpt-4o-mini" }, prompt: buildPrompt() },
+        speak: { provider: { type: "deepgram", model: "aura-2-thalia-en" } }
       }
-    }
-  }));
+    }));
 
-  // Keep connection alive
-  keepAliveTimer = setInterval(() => {
-    if (socket?.readyState === WebSocket.OPEN)
-      socket.send(JSON.stringify({ type: "KeepAlive" }));
-  }, 5000);
+    keepAliveTimer = setInterval(() => {
+      if (socket?.readyState === WebSocket.OPEN)
+        socket.send(JSON.stringify({ type: "KeepAlive" }));
+    }, 5000);
 
-  socket.onmessage = (ev) => {
-    if (ev.data instanceof ArrayBuffer) {
-      playPCM(ev.data);
-    } else {
-      handleEvent(JSON.parse(ev.data));
-    }
-  };
+    socket.onmessage = (ev) => {
+      if (ev.data instanceof ArrayBuffer) {
+        playAudioAndDriveAvatar(ev.data);
+      } else {
+        handleEvent(JSON.parse(ev.data));
+      }
+    };
+  } catch(err) {
+    showError('Connection failed: ' + err.message);
+    return;
+  }
 
-  socket.onclose = () => {
-    console.log('Socket closed');
-    setAgentState('idle');
-  };
-
-  socket.onerror = (e) => console.error('Socket error', e);
-
+  updateStatus('Connected ✓');
   startMicCapture();
   showScreen('call');
   startTimer();
@@ -979,15 +1083,15 @@ function startMockMode() {
 
   mockInterval = setInterval(() => {
     if (idx < mockResponses.length) {
-      setAgentState('speaking');
+      document.getElementById('ai-speaking-ring')?.classList.add('active-ai');
       setTimeout(() => {
         addLine('agent', mockResponses[idx++]);
-        setAgentState('listening');
-      }, 800);
+        document.getElementById('ai-speaking-ring')?.classList.remove('active-ai');
+      }, 1500);
     } else {
       clearInterval(mockInterval);
     }
-  }, 3500);
+  }, 4000);
 }
 
 function buildPrompt() {
@@ -1041,42 +1145,58 @@ function startMicCapture() {
   mute.connect(captureCtx.destination);
 }
 
-// ─── Audio playback ───────────────────────────────────────
+let playCtx = new AudioContext({ sampleRate: 16000 });
+let nextPlayTime = 0;
 let activeSources = [];
 
 function stopAudioBuffering() {
-  activeSources.forEach(src => {
-    try { src.disconnect(); src.stop(); } catch(e) {}
-  });
+  activeSources.forEach(src => { try { src.stop(); src.disconnect(); } catch(e){} });
   activeSources = [];
-  nextPlay = 0; // Reset scheduling timeline
+  nextPlayTime = 0;
+  // Also clear Simli's buffer so avatar stops talking immediately
+  if (simliReady && simliClient) {
+    try { simliClient.ClearBuffer(); } catch(e) {}
+  }
+  document.getElementById('ai-speaking-ring')?.classList.remove('active-ai');
 }
 
-function playPCM(buffer) {
-  if (awaitingSummary || transferring) return; // Mute AI playback during backend processing
-  
-  const pcm = new Int16Array(buffer);
-  if (!pcm.length) return;
-  if (playCtx.state === "suspended") playCtx.resume();
+async function playAudioAndDriveAvatar(buffer) {
+  if (awaitingSummary || transferring) return;
+  const i16 = new Int16Array(buffer);
+  if (!i16.length) return;
 
-  const ab  = playCtx.createBuffer(1, pcm.length, 24000);
-  const ch  = ab.getChannelData(0);
-  for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 32768;
+  // Show AI speaking indicator
+  document.getElementById('ai-speaking-ring')?.classList.add('active-ai');
 
-  const src = playCtx.createBufferSource();
-  src.buffer = ab;
-  src.connect(playCtx.destination);
+  if (simliReady && simliClient) {
+    // ── SIMLI PATH: Send audio to avatar (it handles BOTH lip-sync AND playback) ──
+    try { simliClient.sendAudioData(new Uint8Array(buffer)); } catch(e) {}
+  } else {
+    // ── FALLBACK: Play audio via Web Audio API when Simli is not active ──
+    if (playCtx.state === 'suspended') await playCtx.resume();
+    const f32 = new Float32Array(i16.length);
+    for (let i = 0; i < i16.length; i++) f32[i] = i16[i] / 32768.0;
 
-  const now = playCtx.currentTime;
-  if (nextPlay < now) nextPlay = now + 0.04;
-  src.start(nextPlay);
-  nextPlay += ab.duration;
+    const audioBuf = playCtx.createBuffer(1, f32.length, 16000);
+    audioBuf.copyToChannel(f32, 0);
+    const source = playCtx.createBufferSource();
+    source.buffer = audioBuf;
+    source.connect(playCtx.destination);
+    
+    const now = playCtx.currentTime;
+    const startAt = Math.max(now + 0.04, nextPlayTime);
+    source.start(startAt);
+    nextPlayTime = startAt + audioBuf.duration;
 
-  // Track for interruption clearing
-  activeSources.push(src);
-  src.onended = () => {
-    activeSources = activeSources.filter(s => s !== src);
-  };
+    // Track sources for interruption
+    activeSources.push(source);
+    source.onended = () => {
+      activeSources = activeSources.filter(s => s !== source);
+      if (activeSources.length === 0) {
+        document.getElementById('ai-speaking-ring')?.classList.remove('active-ai');
+      }
+    };
+  }
 }
 
 // ─── Message handler ──────────────────────────────────────
@@ -1136,17 +1256,20 @@ function handleEvent(msg) {
       break;
 
     case 'AgentStartedSpeaking': 
-      setAgentState('speaking'); 
+      document.getElementById('ai-speaking-ring')?.classList.add('active-ai');
+      document.getElementById('user-speaking-ring')?.classList.remove('active-user');
+      nextPlayTime = 0; // reset queue
       break;
     case 'AgentAudioDone':
-      setAgentState('listening');
-      if (transferring) {
-        setTimeout(() => endCall(true), 1500); 
-      }
+      document.getElementById('ai-speaking-ring')?.classList.remove('active-ai');
       break;
     case 'UserStartedSpeaking':
-      stopAudioBuffering(); // Interruption: instantly clear browser audio queue
-      resetSilenceTimer();
+      document.getElementById('user-speaking-ring')?.classList.add('active-user');
+      document.getElementById('ai-speaking-ring')?.classList.remove('active-ai');
+      stopAudioBuffering();
+      break;
+    case 'UserStoppedSpeaking':
+      document.getElementById('user-speaking-ring')?.classList.remove('active-user');
       break;
     default: console.log('📨', msg.type, msg);
   }
@@ -1176,16 +1299,20 @@ function setAgentState(state) {
 
 function addLine(role, content) {
   if (!content) return;
-  const box   = document.getElementById('transcript-box');
+  const box = document.getElementById('transcript-box');
   const empty = document.getElementById('t-empty');
   if (empty) empty.remove();
 
   const line = document.createElement('div');
-  line.className = 't-line ' + role;
-  line.innerHTML = `<div class="t-who">${role === 'agent' ? '🤖 Agent' : '👤 You'}</div><div class="t-txt">${content}</div>`;
+  const isAgent = role === 'agent' || role === 'assistant';
+  line.className = `t-line-v ${isAgent ? 'ai' : 'user'}`;
+  line.innerHTML = `
+    <span class="role">${isAgent ? 'Aria:' : 'You:'}</span>
+    <span class="text">${content}</span>
+  `;
   box.appendChild(line);
   box.scrollTop = box.scrollHeight;
-  transcriptLog.push({ role, content, ts: Date.now() });
+  transcriptLog.push({ role: isAgent ? 'assistant' : 'user', content, ts: Date.now() });
 }
 
 // ─── Timer ────────────────────────────────────────────────
@@ -1207,6 +1334,17 @@ function toggleMute() {
   btn.querySelector('.lbl').textContent = isMuted ? 'Unmute' : 'Mute';
 }
 
+function toggleCamera() {
+  const vt = userVideoStream?.getVideoTracks()[0];
+  if (!vt) return;
+  cameraOn = !cameraOn;
+  vt.enabled = cameraOn;
+  document.getElementById('cam-off-overlay').style.display = cameraOn ? 'none' : 'flex';
+  const btn = document.getElementById('btn-cam');
+  btn.classList.toggle('active', !cameraOn);
+  btn.querySelector('.lbl').textContent = cameraOn ? 'Camera' : 'Cam Off';
+}
+
 async function toggleScreen() {
   const btn = document.getElementById('btn-screen');
   if (transferring) return;
@@ -1216,10 +1354,12 @@ async function toggleScreen() {
       sharing = true;
       btn.classList.add('active');
       btn.querySelector('.lbl').textContent = 'Sharing';
+      document.getElementById('screenshare-badge').style.display = 'block';
       shareStream.getVideoTracks()[0].onended = () => {
         sharing = false;
         btn.classList.remove('active');
         btn.querySelector('.lbl').textContent = 'Screen';
+        document.getElementById('screenshare-badge').style.display = 'none';
       };
     } catch (e) { /* user cancelled */ }
   } else {
@@ -1227,6 +1367,7 @@ async function toggleScreen() {
     sharing = false;
     btn.classList.remove('active');
     btn.querySelector('.lbl').textContent = 'Screen';
+    document.getElementById('screenshare-badge').style.display = 'none';
   }
 }
 
@@ -1339,34 +1480,38 @@ function showEndedScreen() {
 
   showScreen('ended');
 
-  // PERSIST TO SUPABASE
-  supabase.from('tickets').insert([{
-    ticket_id:         userData.ticketId,
-    customer_name:     userData.name,
-    customer_email:    userData.email,
-    issue_type:        userData.issue,
-    issue_description: userData.desc,
-    duration_seconds:  callSecs,
-    exchange_count:    exchangeCount,
-    sentiment:         sentiment,
-    is_resolved:       isResolved,
-    summary:           callSummary,
-    transcript:        transcriptLog
-  }]).then(({ error }) => {
-    if (error) {
-      console.error('❌ Supabase storage error:', error);
-    } else {
-      console.log('✅ Ticket persisted to Supabase.');
-      // Upgrade 5: Automated Email Notification
-      sendTicketEmail({
-        name: userData.name,
-        email: userData.email,
-        ticket_id: userData.ticketId,
-        issue: userData.issue,
-        summary: callSummary
-      });
-    }
-  });
+  // PERSIST TO DB
+  if (dbClient) {
+    dbClient.from('tickets').insert([{
+      ticket_id:         userData.ticketId,
+      customer_name:     userData.name,
+      customer_email:    userData.email,
+      issue_type:        userData.issue,
+      issue_description: userData.desc,
+      duration_seconds:  callSecs,
+      exchange_count:    exchangeCount,
+      sentiment:         sentiment,
+      is_resolved:       isResolved,
+      summary:           callSummary,
+      transcript:        transcriptLog
+    }]).then(({ error }) => {
+      if (error) {
+        console.error('❌ Supabase storage error:', error);
+      } else {
+        console.log('✅ Ticket persisted to Supabase.');
+        // Upgrade 5: Automated Email Notification
+        sendTicketEmail({
+          name: userData.name,
+          email: userData.email,
+          ticket_id: userData.ticketId,
+          issue: userData.issue,
+          summary: callSummary
+        });
+      }
+    });
+  } else {
+    console.log('✅ Supabase disabled — skipping DB persistence.');
+  }
 }
 
 // ─── Email Notification (Supabase Edge Function + Resend) ─────
@@ -1399,9 +1544,25 @@ function cleanup() {
   if (captureCtx)  { try { captureCtx.close(); } catch(e){} captureCtx = null; }
   if (micStream)   { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
   if (shareStream) { shareStream.getTracks().forEach(t => t.stop()); shareStream = null; }
+  
+  // Stop user camera
+  if (userVideoStream) {
+    userVideoStream.getTracks().forEach(t => t.stop());
+    userVideoStream = null;
+  }
+  // Stop Simli
+  if (simliClient) {
+    try { simliClient.close(); } catch(e) {}
+    simliClient = null;
+    simliReady = false;
+  }
+  // Reset video refs
+  document.getElementById('simli-video').srcObject = null;
+  document.getElementById('user-video').srcObject = null;
+
   isMuted  = false;
   sharing  = false;
-  nextPlay = 0;
+  nextPlayTime = 0;
   document.getElementById('btn-mute').classList.remove('active');
   document.getElementById('btn-mute').querySelector('.lbl').textContent = 'Mute';
   document.getElementById('btn-screen').classList.remove('active');

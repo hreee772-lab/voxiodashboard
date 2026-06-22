@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voicera — Sign In & Sign Up</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #060e20;
+            --surface-dim: #080f1e;
+            --surface-lo: #0a1228;
+            --surface: #0f1930;
+            --surface-hi: #141f38;
+            --surface-highest: #192540;
+            --surface-bright: #1f2b49;
+            
+            --primary: #bd9dff;
+            --primary-dim: #8a4cfc;
+            --primary-glow: rgba(138,76,252,0.22);
+            --primary-glow-sm: rgba(189,157,255,0.12);
+            
+            --tertiary: #c4ffcd;
+            --tertiary-dim: rgba(196,255,205,0.12);
+            
+            --on-surface: #dee5ff;
+            --on-surface-med: #8a94c0;
+            --on-surface-low: #455080;
+            
+            --ghost: rgba(189,157,255,0.15);
+            --ghost-med: rgba(189,157,255,0.08);
+            --grad-cta: linear-gradient(135deg, var(--primary-dim), var(--primary));
+            
+            --text-main: var(--on-surface);
+            --text-dim: var(--on-surface-med);
+            --border-color: var(--ghost);
+            
+            --font-h: 'Manrope', sans-serif;
+            --font-b: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-b);
+            min-height: 100vh;
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* Left brand column with Aurora/Nocturnal style */
+        .brand-pane {
+            background: linear-gradient(135deg, #090822 0%, #060e20 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 64px;
+            position: relative;
+            overflow: hidden;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .brand-pane::before {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+            top: 20%;
+            left: 10%;
+            pointer-events: none;
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-main);
+            z-index: 10;
+        }
+
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            background: var(--grad-cta);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .brand-logo svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .brand-title {
+            font-family: var(--font-h);
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .brand-content {
+            margin: auto 0;
+            max-width: 520px;
+            z-index: 10;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary-glow-sm);
+            border: 1px solid var(--border-color);
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 6px 12px;
+            border-radius: 100px;
+            margin-bottom: 32px;
+        }
+
+        .brand-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--primary);
+        }
+
+        .brand-hero-text {
+            font-family: var(--font-h);
+            font-size: 44px;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.04em;
+            margin-bottom: 24px;
+        }
+
+        .brand-hero-text span {
+            color: var(--primary);
+            text-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .brand-description {
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--text-dim);
+            margin-bottom: 48px;
+        }
+
+        .brand-stats {
+            display: flex;
+            gap: 40px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--on-surface-low);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-value {
+            font-family: var(--font-h);
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--on-surface);
+        }
+
+        .stat-value span {
+            color: var(--on-surface-low);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .brand-back-btn {
+            font-size: 14px;
+            color: var(--text-dim);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+            margin-bottom: 40px;
+        }
+
+        .brand-back-btn:hover {
+            color: var(--text-main);
+        }
+
+        /* Right login form column */
+        .form-pane {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 64px 48px;
+            background: var(--bg-color);
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .form-heading-area {
+            margin-bottom: 32px;
+        }
+
+        .form-title {
+            font-family: var(--font-h);
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 8px;
+            color: var(--on-surface);
+        }
+
+        .form-subtitle {
+            font-size: 14px;
+            color: var(--text-dim);
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: var(--surface-hi);
+            color: var(--text-main);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--on-surface-med);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 8px;
+        }
+
+        .input {
+            width: 100%;
+            background: var(--surface-lo);
+            border: 1px solid var(--ghost-med);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text-main);
+            font-family: var(--font-b);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input::placeholder {
+            color: var(--on-surface-low);
+        }
+
+        .input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .btn {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-family: var(--font-b);
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--grad-cta);
+            color: #ffffff;
+            box-shadow: 0 4px 20px var(--primary-glow);
+        }
+
+        .btn:hover {
+            box-shadow: 0 6px 28px var(--primary-glow);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: rgba(138, 76, 252, 0.4);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .link-wrap {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .link-wrap a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .link-wrap a:hover {
+            text-decoration: underline;
+        }
+
+        .msg-box {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 24px;
+            display: none;
+            line-height: 1.4;
+        }
+
+        .error-msg {
+            background: rgba(255, 110, 132, 0.1);
+            border: 1px solid rgba(255, 110, 132, 0.2);
+            color: #ff6e84;
+        }
+
+        .success-msg {
+            background: var(--primary-glow-sm);
+            border: 1px solid var(--border-color);
+            color: var(--primary);
+        }
+
+        #signUpForm, #resetForm { display: none; }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .brand-pane {
+                display: none;
+            }
+            .form-pane {
+                padding: 64px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Brand Pane -->
+        <div class="brand-pane">
+            <div>
+                <a href="/" class="brand-back-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    Back home
+                </a>
+                <a href="/" class="brand-header">
+                    <div class="brand-logo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path><path d="M12 12L2.5 4.5"></path></svg>
+                    </div>
+                    <span class="brand-title">Voicera</span>
+                </a>
+            </div>
+
+            <div class="brand-content">
+                <div class="brand-badge">Start free, no card</div>
+                <h1 class="brand-hero-text">500 free minutes.<br>Live in <span>under an hour</span>.</h1>
+                <p class="brand-description">Trusted by support teams at fintechs, marketplaces, and SaaS leaders. No credit card required to start.</p>
+                
+                <div class="brand-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Setup time</span>
+                        <span class="stat-value">~12 <span>min</span></span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Free credits</span>
+                        <span class="stat-value">500 <span>min</span></span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Trial</span>
+                        <span class="stat-value">14 <span>days</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div></div>
+        </div>
+
+        <!-- Right Form Pane -->
+        <div class="form-pane">
+            <div class="form-container">
+                <div class="form-heading-area">
+                    <h2 class="form-title" id="formHeaderTitle">Create your account</h2>
+                    <p class="form-subtitle" id="formHeaderSubtitle">Get started in a couple of minutes.</p>
+                </div>
+
+                <div class="tabs" id="authTabs">
+                    <div class="tab" id="signInTab" onclick="showTab('signIn')">Sign In</div>
+                    <div class="tab active" id="signUpTab" onclick="showTab('signUp')">Sign Up</div>
+                </div>
+
+                <div id="errorMsg" class="msg-box error-msg"></div>
+                <div id="successMsg" class="msg-box success-msg"></div>
+
+                <!-- Sign Up Form -->
+                <form id="signUpForm" style="display: block;">
+                    <div class="form-group">
+                        <label class="label">Full name</label>
+                        <input type="text" id="signup-name" class="input" placeholder="Thripadh Naidu" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Work email</label>
+                        <input type="email" id="signup-email" class="input" placeholder="thripadh@acme.co" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Password</label>
+                        <input type="password" id="signup-password" class="input" placeholder="••••••••••••" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Confirm password</label>
+                        <input type="password" id="signup-confirm" class="input" placeholder="••••••••••••" required>
+                    </div>
+                    <button type="submit" id="upBtn" class="btn">
+                        Continue
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </button>
+                    <div class="link-wrap">Already have an account? <a href="javascript:void(0)" onclick="showTab('signIn')">Sign in</a></div>
+                </form>
+
+                <!-- Sign In Form -->
+                <form id="signInForm" style="display: none;">
+                    <div class="form-group">
+                        <label class="label">Work email</label>
+                        <input type="email" id="inEmail" class="input" placeholder="thripadh@acme.co" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Password</label>
+                        <input type="password" id="inPass" class="input" placeholder="••••••••••••" required>
+                    </div>
+                    <button type="submit" id="inBtn" class="btn">
+                        Sign In
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </button>
+                    <div class="link-wrap">
+                        <a href="javascript:void(0)" onclick="showTab('reset')">Forgot password?</a>
+                        <div style="margin-top: 12px;">Don't have an account? <a href="javascript:void(0)" onclick="showTab('signUp')">Sign up</a></div>
+                    </div>
+                </form>
+
+                <!-- Forgot Password Form -->
+                <div id="resetForm">
+                    <div class="form-group">
+                        <label class="label">Work email</label>
+                        <input type="email" id="resetEmail" class="input" placeholder="thripadh@acme.co" required>
+                    </div>
+                    <button type="button" onclick="handleReset()" id="resetBtn" class="btn">Send Reset Link</button>
+                    <div class="link-wrap"><a href="javascript:void(0)" onclick="showTab('signIn')">Back to Sign In</a></div>
+                </div>
+
+                <!-- New Password Form -->
+                <form id="newPasswordForm" style="display: none;">
+                    <div class="form-group">
+                        <label class="label">New password</label>
+                        <input type="password" id="new-password" class="input" placeholder="••••••••••••" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Confirm new password</label>
+                        <input type="password" id="new-confirm" class="input" placeholder="••••••••••••" required>
+                    </div>
+                    <button type="submit" id="updateBtn" class="btn">
+                        Update Password
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://voicera-backend-production.up.railway.app';
+        const SUPABASE_URL = 'https://tvqpmkazbzkviyegbwtc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cXBta2F6Ynprdml5ZWdid3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NDM1MjMsImV4cCI6MjA5MzIxOTUyM30.ITXCPEShl5WWTysmhQRyIpg8AeQxpeVlsFuFAqekdig';
+        const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Check for activation or recovery parameters in URL/hash
+        const urlParams = new URLSearchParams(window.location.search);
+        const isRecovery = window.location.hash.includes('type=recovery') || window.location.hash.includes('recovery');
+
+        if (isRecovery) {
+            showTab('newPassword');
+        } else if (urlParams.get('activated') === 'true') {
+            showSuccess('✓ Account activated successfully! You can now sign in below.');
+            showTab('signIn');
+        } else if (urlParams.get('error') === 'activation_failed') {
+            showError('The activation link is invalid, expired, or has already been used.');
+            showTab('signUp');
+        } else {
+            // Default to Sign Up tab
+            showTab('signUp');
+        }
+
+        function showError(msg) {
+            const err = document.getElementById('errorMsg');
+            const succ = document.getElementById('successMsg');
+            succ.style.display = 'none';
+            err.textContent = msg;
+            err.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showSuccess(msg) {
+            const err = document.getElementById('errorMsg');
+            const succ = document.getElementById('successMsg');
+            err.style.display = 'none';
+            succ.textContent = msg;
+            succ.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showTab(type) {
+            document.getElementById('signInTab').classList.toggle('active', type === 'signIn');
+            document.getElementById('signUpTab').classList.toggle('active', type === 'signUp');
+            document.getElementById('authTabs').style.display = (type === 'reset' || type === 'newPassword') ? 'none' : 'flex';
+            
+            document.getElementById('signUpForm').style.display = type === 'signUp' ? 'block' : 'none';
+            document.getElementById('signInForm').style.display = type === 'signIn' ? 'block' : 'none';
+            document.getElementById('resetForm').style.display = type === 'reset' ? 'block' : 'none';
+            document.getElementById('newPasswordForm').style.display = type === 'newPassword' ? 'block' : 'none';
+            
+            const headerTitle = document.getElementById('formHeaderTitle');
+            const headerSubtitle = document.getElementById('formHeaderSubtitle');
+            
+            if (type === 'signUp') {
+                headerTitle.textContent = 'Create your account';
+                headerSubtitle.textContent = 'Get started in a couple of minutes.';
+            } else if (type === 'signIn') {
+                headerTitle.textContent = 'Welcome back';
+                headerSubtitle.textContent = 'Sign in to access your dashboard.';
+            } else if (type === 'reset') {
+                headerTitle.textContent = 'Reset password';
+                headerSubtitle.textContent = "We'll send a recovery link to your inbox.";
+            } else if (type === 'newPassword') {
+                headerTitle.textContent = 'Set new password';
+                headerSubtitle.textContent = 'Choose a strong secure password for your account.';
+            }
+
+            document.getElementById('errorMsg').style.display = 'none';
+            // Do not hide success if it was redirect success
+            if (!urlParams.get('activated')) {
+                document.getElementById('successMsg').style.display = 'none';
+            }
+        }
+
+        // Register action submit
+        document.getElementById('signUpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullName = document.getElementById('signup-name').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value.trim();
+            const confirm = document.getElementById('signup-confirm').value.trim();
+            const btn = document.getElementById('upBtn');
+
+            if (password !== confirm) {
+                return showError('Passwords do not match.');
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Creating account...';
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/v1/auth/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        company_name: fullName,
+                        company_email: email,
+                        password: password,
+                        domain: email.split('@')[1] || ''
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    showError(data.detail || 'Failed to create account.');
+                    btn.disabled = false;
+                    btn.textContent = 'Continue';
+                    return;
+                }
+
+                showSuccess('✓ Account created! Please check your email to activate your account.');
+                document.getElementById('signUpForm').reset();
+                btn.disabled = false;
+                btn.textContent = 'Continue';
+
+            } catch (err) {
+                showError('Unable to connect to authentication server. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Continue';
+            }
+        });
+
+        // Login action submit
+        document.getElementById('signInForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('inEmail').value.trim();
+            const password = document.getElementById('inPass').value.trim();
+            const btn = document.getElementById('inBtn');
+
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    showError(data.detail || 'Invalid email or password.');
+                    btn.disabled = false;
+                    btn.textContent = 'Sign In';
+                    return;
+                }
+
+                // Successfully logged in! Store session locally and redirect
+                localStorage.setItem('voicera_token', data.access_token);
+                localStorage.setItem('voicera_backend_token', data.access_token);
+                localStorage.setItem('voicera_email', data.user.email);
+                localStorage.setItem('voicera_name', data.user.full_name);
+                localStorage.setItem('voicera_client_id', data.client.id);
+                localStorage.setItem('voicera_company', data.client.company_name);
+                localStorage.setItem('voicera_role', data.user.role);
+
+                showSuccess('✓ Signed in successfully! Redirecting...');
+                setTimeout(() => {
+                    window.location.href = 'index';
+                }, 800);
+
+            } catch (err) {
+                showError('Unable to connect to authentication server. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        });
+
+        // Reset password trigger
+        async function handleReset() {
+            const email = document.getElementById('resetEmail').value.trim();
+            if (!email) return showError('Please enter your work email.');
+            
+            const btn = document.getElementById('resetBtn');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                // Using global _supabase client
+                const { error } = await _supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + '/login'
+                });
+
+                if (error) {
+                    showError(error.message);
+                    btn.disabled = false;
+                    btn.textContent = 'Send Reset Link';
+                } else {
+                    showSuccess('Password reset email sent. Check your inbox.');
+                    btn.disabled = false;
+                    btn.textContent = 'Send Reset Link';
+                }
+            } catch (e) {
+                showError('Unable to complete request. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Send Reset Link';
+            }
+        }
+
+        // Handle password reset update submission
+        document.getElementById('newPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('new-password').value.trim();
+            const confirm = document.getElementById('new-confirm').value.trim();
+            const btn = document.getElementById('updateBtn');
+
+            if (password !== confirm) {
+                return showError('Passwords do not match.');
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Updating...';
+
+            try {
+                const { error } = await _supabase.auth.updateUser({ password: password });
+                
+                if (error) {
+                    showError(error.message);
+                    btn.disabled = false;
+                    btn.textContent = 'Update Password';
+                    return;
+                }
+
+                showSuccess('✓ Password updated successfully! You can now sign in with your new password.');
+                
+                // Clear URL hash to prevent loops
+                window.history.replaceState({}, '', window.location.pathname);
+                
+                document.getElementById('newPasswordForm').reset();
+                btn.disabled = false;
+                btn.textContent = 'Update Password';
+                showTab('signIn');
+
+            } catch (err) {
+                showError('Unable to update password. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Update Password';
+            }
+        });
+    </script>
+</body>
+</html>

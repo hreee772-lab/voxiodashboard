@@ -1,0 +1,802 @@
+/**
+ * Voicera Widget — Sonic Architect Rewrite
+ * v2.0.0 - Full Production Backend Integration
+ */
+(function() {
+  const STYLE = `
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+    :host {
+      --bg: #060e20;
+      --surface: #0f1930;
+      --surface2: #141f38;
+      --surface3: #192540;
+      --surface4: #1f2b49;
+      --border: rgba(222,229,255,0.04);
+      --border-hover: rgba(222,229,255,0.1);
+      --border-active: rgba(189,157,255,0.3);
+      --primary: #bd9dff;
+      --primary-dim: #8a4cfc;
+      --primary-grad: linear-gradient(135deg,#8a4cfc 0%,#bd9dff 100%);
+      --primary-glow: rgba(138,76,252,0.25);
+      --green: #4ADE80;
+      --red: #ff6e84;
+      --amber: #FBBF24;
+      --blue: #60A5FA;
+      --text-1: #eef0ff;
+      --text-2: rgba(238,240,255,0.55);
+      --text-3: rgba(238,240,255,0.28);
+      --font-h: 'Manrope', sans-serif;
+      --font-b: 'Inter', sans-serif;
+      --ease: cubic-bezier(0.4, 0, 0.2, 1);
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      
+      all: initial;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .trigger {
+      position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
+      background: var(--primary-grad); border: none; border-radius: 50%;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      z-index: 2147483647; transition: all 0.3s var(--spring);
+      box-shadow: 0 4px 24px var(--primary-glow);
+    }
+    .trigger:hover { transform: scale(1.08); }
+    .trigger svg { width: 24px; height: 24px; color: white; }
+    .trigger-pulse {
+      position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--primary);
+      opacity: 0; animation: triggerPulse 2.5s ease-out infinite;
+    }
+    @keyframes triggerPulse {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    .widget {
+      position: fixed; bottom: 92px; right: 24px; width: 400px; height: 600px;
+      background: var(--surface); border-radius: 24px; border: 1px solid var(--border-hover);
+      display: none; flex-direction: column; overflow: hidden; z-index: 2147483646;
+      transform: translateY(20px) scale(0.95); opacity: 0;
+      transition: all 0.35s var(--spring); font-family: var(--font-b);
+      box-shadow: 0 0 0 1px rgba(189,157,255,0.06), 0 32px 80px rgba(0,0,0,0.7);
+    }
+    .widget.open { display: flex; transform: translateY(0) scale(1); opacity: 1; }
+
+    .hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 18px; background: rgba(15,25,48,0.95); backdrop-filter: blur(40px);
+      border-bottom: 1px solid var(--border); z-index: 10; flex-shrink: 0;
+    }
+    .hdr-left { display: flex; align-items: center; gap: 10px; }
+    .back-btn, .close-x {
+      width: 28px; height: 28px; background: var(--surface2); border: 1px solid var(--border-hover);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-3); transition: all 0.18s; flex-shrink: 0;
+    }
+    .back-btn:hover { background: var(--surface3); color: var(--text-1); }
+    .close-x:hover { background: rgba(255,110,132,0.1); border-color: rgba(255,110,132,0.25); color: var(--red); }
+    
+    .logo-mark {
+      width: 32px; height: 32px; background: var(--primary-grad); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 12px var(--primary-glow);
+    }
+    .logo-mark svg { width: 16px; height: 16px; color: white; }
+    .hdr-text { display: flex; flex-direction: column; gap: 2px; }
+    .hdr-name { display: block; font-family: var(--font-h); font-size: 13px; font-weight: 700; color: #eef0ff; letter-spacing: -0.02em; }
+    .hdr-status { display: flex; align-items: center; gap: 4px; font-size: 11px; color: rgba(238,240,255,0.28); }
+    .live-dot {
+      width: 5px; height: 5px; background: var(--green); border-radius: 50%;
+      box-shadow: 0 0 6px var(--green); animation: livePulse 2.5s infinite;
+    }
+    @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    .scr { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+    .scr.on { display: flex; animation: fadeIn 0.25s var(--ease) both; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    /* SCREEN 1 */
+    .s-channel { padding: 20px 18px; }
+    .ch-eyebrow {
+      display: inline-flex; align-items: center; gap: 5px; background: rgba(189,157,255,0.08);
+      border: 1px solid rgba(189,157,255,0.2); border-radius: 9999px; padding: 3px 10px;
+      font-size: 10px; font-weight: 600; color: var(--primary); letter-spacing: 0.06em;
+      text-transform: uppercase; margin-bottom: 12px;
+    }
+    .s-channel h2 { font-family: var(--font-h); font-size: 22px; font-weight: 800; color: var(--text-1); letter-spacing: -0.04em; line-height: 1.15; margin-bottom: 6px; }
+    .s-channel p { font-size: 13px; color: var(--text-2); line-height: 1.6; font-weight: 300; margin-bottom: 22px; }
+    .ch-options { display: flex; flex-direction: column; gap: 10px; }
+    .ch-option {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 16px;
+      padding: 16px 18px; cursor: pointer; display: flex; align-items: center; gap: 14px;
+      position: relative; overflow: hidden; transition: all 0.25s var(--ease);
+    }
+    .ch-option::before {
+      content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+      border-radius:3px 0 0 3px; opacity:0; transition:opacity 0.2s;
+    }
+    .ch-option.voice::before { background: var(--primary-grad); }
+    .ch-option.chat::before { background: linear-gradient(180deg, var(--green), #22c55e); }
+    .ch-option:hover { background: var(--surface3); border-color: var(--border-hover); transform: translateX(2px); }
+    .ch-option:hover::before { opacity:1; }
+    .ch-option.voice:hover { border-color: rgba(189,157,255,0.25); }
+    .ch-option.chat:hover { border-color: rgba(74,222,128,0.25); }
+    
+    .ch-ico {
+      width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    }
+    .ch-option.voice .ch-ico { background: rgba(189,157,255,0.1); border: 1px solid rgba(189,157,255,0.2); }
+    .ch-option.chat .ch-ico { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2); }
+    .ch-ico svg { width: 20px; height: 20px; }
+    .ch-option.voice .ch-ico svg { color: var(--primary); }
+    .ch-option.chat .ch-ico svg { color: var(--green); }
+    
+    .ch-text h3 { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; margin-bottom: 3px; }
+    .ch-text p { font-size: 12px; color: var(--text-2); line-height: 1.5; font-weight: 300; }
+    .ch-badge { padding: 3px 8px; border-radius: 9999px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-left: auto; }
+    .ch-option.voice .ch-badge { background: rgba(189,157,255,0.1); color: var(--primary); border: 1px solid rgba(189,157,255,0.2); }
+    .ch-option.chat .ch-badge { background: rgba(74, 222, 128, 0.1); color: var(--green); border: 1px solid rgba(74, 222, 128, 0.2); }
+
+    .ch-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0 4px; font-size: 11px; color: var(--text-3); }
+    .ch-divider::before, .ch-divider::after { content:''; flex:1; height:1px; background: rgba(222,229,255,0.1); }
+    .ch-security { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px; color: var(--text-3); margin-top: 16px; }
+    .ch-security svg { width: 12px; height: 12px; }
+
+    /* SCREEN 2 — CHAT */
+    .s-chat { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .msgs {
+      flex: 1; overflow-y: auto; padding: 16px 16px 8px; display: flex; flex-direction: column; gap: 10px;
+      scrollbar-width: thin; scrollbar-color: var(--surface4) transparent;
+    }
+    .msgs::-webkit-scrollbar { width: 4px; }
+    .msgs::-webkit-scrollbar-thumb { background: var(--surface4); border-radius: 10px; }
+    .msg { display: flex; gap: 8px; align-items: flex-end; }
+    .msg.u { flex-direction: row-reverse; }
+    .av {
+      width: 26px; height: 26px; flex-shrink: 0; background: var(--primary-grad); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px var(--primary-glow);
+    }
+    .av svg { width: 12px; height: 12px; color: white; }
+    .bbl { max-width: 80%; padding: 9px 13px; font-size: 13px; line-height: 1.6; font-weight: 400; border-radius: 14px; }
+    .msg.b .bbl { background: var(--surface2); border: 1px solid rgba(222,229,255,0.1); border-bottom-left-radius: 4px; color: var(--text-1); }
+    .msg.u .bbl { background: var(--primary-grad); border-bottom-right-radius: 4px; color: white; box-shadow: 0 2px 12px var(--primary-glow); }
+    
+    .typing-wrap { display: flex; gap: 8px; align-items: flex-end; }
+    .typing-bbl {
+      padding: 10px 14px; background: var(--surface2); border: 1px solid rgba(222,229,255,0.1);
+      border-radius: 14px; border-bottom-left-radius: 4px; display: flex; gap: 4px; align-items: center;
+    }
+    .typing-bbl span { width: 5px; height: 5px; background: var(--text-3); border-radius: 50%; animation: tdot 1.2s infinite; }
+    .typing-bbl span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-bbl span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes tdot { 0%,60%,100%{transform:none;opacity:0.3} 30%{transform:translateY(-5px);opacity:1} }
+    
+    .help-btns { display: flex; gap: 6px; padding: 0 16px 6px; }
+    .help-btn { padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.18s; border: 1px solid; }
+    .help-btn.yes { background: rgba(74, 222, 128, 0.08); border-color: rgba(74, 222, 128, 0.25); color: var(--green); }
+    .help-btn.no { background: rgba(255, 110, 132, 0.08); border-color: rgba(255, 110, 132, 0.25); color: var(--red); }
+    
+    .warn-bar, .esc-bar {
+      margin: 4px 14px; padding: 8px 12px; border-radius: 10px; display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px; line-height: 1.5;
+    }
+    .warn-bar { background: rgba(251, 191, 36, 0.07); border: 1px solid rgba(251, 191, 36, 0.2); color: var(--amber); }
+    .esc-bar { background: rgba(96, 165, 250, 0.07); border: 1px solid rgba(96, 165, 250, 0.2); color: var(--blue); }
+    .warn-bar svg, .esc-bar svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; }
+
+    .inp-area {
+      padding: 10px 14px; border-top: 1px solid var(--border); background: rgba(15, 25, 48, 0.95);
+      backdrop-filter: blur(40px); display: flex; gap: 8px; align-items: flex-end;
+    }
+    .inp {
+      flex: 1; min-height: 38px; max-height: 90px; background: var(--surface2); border: 1px solid var(--border-hover);
+      border-radius: 10px; padding: 9px 13px; font-family: var(--font-b); font-size: 13px; color: var(--text-1);
+      outline: none; resize: none; line-height: 1.45; transition: border-color 0.2s;
+    }
+    .inp:focus { border-color: rgba(189,157,255,0.4); }
+    .send-btn {
+      width: 38px; height: 38px; flex-shrink: 0; background: var(--primary-grad); border: none;
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.18s; box-shadow: 0 2px 10px var(--primary-glow);
+    }
+    .send-btn svg { width: 15px; height: 15px; color: white; }
+    
+    .chat-actions { display: flex; align-items: center; justify-content: center; padding: 6px 14px 8px; }
+    .end-chat-link { font-size: 11px; color: var(--text-3); cursor: pointer; display: flex; align-items: center; gap: 4px; transition: color 0.18s; }
+    .end-chat-link:hover { color: var(--red); }
+
+    /* SCREEN 3 — VOICE */
+    .s-voice { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 24px 20px; position: relative; overflow: hidden; }
+    .v-aurora {
+      position: absolute; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 20%, rgba(138,76,252,0.08) 0%, transparent 70%);
+    }
+    .v-orbit { position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; margin-bottom: 28px; z-index: 1; }
+    .orbit-ring { position: absolute; border-radius: 50%; border: 1px solid var(--primary); animation: orbitScale 3s infinite; }
+    .orbit-ring:nth-child(1) { width: 180px; height: 180px; opacity: 0.06; }
+    .orbit-ring:nth-child(2) { width: 140px; height: 140px; opacity: 0.1; animation-delay: 0.4s; }
+    .orbit-ring:nth-child(3) { width: 104px; height: 104px; opacity: 0.16; animation-delay: 0.8s; }
+    .orbit-ring:nth-child(4) { width: 76px; height: 76px; opacity: 0.22; animation-delay: 1.2s; }
+    @keyframes orbitScale { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+    
+    .mic-core {
+      width: 64px; height: 64px; background: linear-gradient(145deg,#5B4FE9,#8B5CF6,#A78BFA);
+      border-radius: 50%; z-index: 2; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 32px rgba(138,76,252,0.5); animation: micPulse 3.5s infinite;
+    }
+    @keyframes micPulse { 0%,100%{box-shadow: 0 8px 32px rgba(138,76,252,0.5)} 50%{box-shadow: 0 12px 48px rgba(138,76,252,0.7)} }
+    .mic-core svg { width: 26px; height: 26px; color: white; }
+    
+    .v-info { text-align: center; z-index: 1; }
+    .v-info h3 { font-family: var(--font-h); font-size: 18px; font-weight: 800; color: var(--text-1); letter-spacing: -0.04em; margin-bottom: 5px; }
+    .v-info p { font-size: 12px; color: var(--text-2); font-weight: 300; line-height: 1.5; }
+    
+    .v-transcript {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border-hover);
+      border-radius: 10px; padding: 12px 14px; min-height: 50px; margin: 18px 0;
+      font-size: 12.5px; color: var(--text-3); font-style: italic; text-align: center;
+    }
+    
+    .end-call {
+      background: rgba(255,110,132,0.08); border: 1px solid rgba(255,110,132,0.2);
+      border-radius: 9999px; padding: 10px 24px; font-size: 13px; font-weight: 500; color: var(--red);
+      cursor: pointer; display: flex; align-items: center; gap: 6px; z-index: 1;
+    }
+    .end-call svg { width: 14px; height: 14px; }
+
+    /* SCREEN 4 — CALENDAR */
+    .s-calendar { padding: 18px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+    .cal-header h3 { font-family: var(--font-h); font-size: 16px; font-weight: 800; color: var(--text-1); letter-spacing: -0.03em; margin-bottom: 4px; }
+    .cal-header p { font-size: 12px; color: var(--text-2); line-height: 1.5; font-weight: 300; }
+    .cal-spec { display: flex; align-items: center; gap: 10px; background: var(--surface2); border: 1px solid var(--border-hover); border-radius: 10px; padding: 12px 14px; }
+    .spec-av { width: 36px; height: 36px; background: var(--primary-grad); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: var(--font-h); font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; }
+    .spec-info h4 { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; }
+    .spec-info p { font-size: 11px; color: var(--text-2); }
+    .cal-label { font-size: 10px; font-weight: 600; color: var(--text-3); letter-spacing: 0.07em; text-transform: uppercase; }
+    .cal-slot {
+      background: var(--surface2); border: 1px solid var(--border-hover); border-radius: 10px; padding: 12px 14px;
+      display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.25s var(--ease);
+      position: relative; overflow: hidden;
+    }
+    .cal-slot::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--primary-grad); opacity:0; transition:0.2s; }
+    .cal-slot:hover { transform: translateX(2px); border-color: rgba(189,157,255,0.2); }
+    .cal-slot:hover::before { opacity:1; }
+    .slot-left span { display: block; }
+    .slot-day { font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
+    .slot-time { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--text-1); }
+    .slot-dur { font-size: 11px; color: var(--text-2); }
+    .slot-pick {
+      padding: 5px 14px; min-width: 70px; background: rgba(189,157,255,0.1); border: 1px solid rgba(189,157,255,0.25);
+      border-radius: 9999px; font-size: 11px; font-weight: 600; color: var(--primary); cursor: pointer; flex-shrink: 0;
+    }
+
+    /* SCREEN 5 — END */
+    .s-end { padding: 20px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+    .end-hero { text-align: center; }
+    .end-icon { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; flex-shrink: 0; border: 1px solid; }
+    .end-icon.resolved { background: rgba(74,222,128,0.1); border-color: rgba(74,222,128,0.25); color: var(--green); }
+    .end-icon.escalated { background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.25); color: var(--blue); }
+    .end-icon.timeout { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.25); color: var(--amber); }
+    .end-icon svg { width: 24px; height: 24px; }
+    .end-hero h2 { font-family: var(--font-h); font-size: 20px; font-weight: 800; color: #eef0ff; letter-spacing: -0.04em; margin-bottom: 6px; }
+    .end-hero p { font-size: 12.5px; color: rgba(238,240,255,0.55); line-height: 1.6; font-weight: 300; }
+    
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 9999px;
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 10px; border: 1px solid;
+    }
+    .status-badge.resolved { background: rgba(74,222,128,0.1); border-color: rgba(74,222,128,0.25); color: #4ADE80; }
+    .status-badge.escalated { background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.25); color: var(--blue); }
+    
+    .end-card { background: #141f38; border: 1px solid var(--border-hover); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .end-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .end-label { font-size: 10.5px; font-weight: 600; color: rgba(238,240,255,0.28); letter-spacing: 0.05em; text-transform: uppercase; }
+    .end-value { font-size: 13px; color: #eef0ff; font-weight: 500; text-align: right; }
+    .end-value.mono { font-family: monospace; font-size: 12px; color: #bd9dff; }
+    .sentiment-bar { display: flex; align-items: center; gap: 6px; }
+    .sent-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .sent-dot.positive { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .sent-dot.neutral { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+    .sent-dot.negative { background: var(--red); box-shadow: 0 0 8px var(--red); }
+    .sent-label { font-size: 12px; font-weight: 500; }
+    .end-divider { height: 1px; background: rgba(222,229,255,0.1); }
+    
+    .star-row { display: flex; gap: 4px; }
+    .star {
+      width: 28px; height: 28px; background: #192540; border: 1px solid rgba(222,229,255,0.1);
+      border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(238,240,255,0.28);
+    }
+    .star.active { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.3); color: #FBBF24; }
+    .star svg { width: 14px; height: 14px; }
+    
+    .close-btn-end {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border-hover); border-radius: 10px;
+      padding: 12px; font-family: var(--font-h); font-size: 13px; font-weight: 700; color: rgba(238,240,255,0.55);
+      display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: 0.2s;
+    }
+    .close-btn-end:hover { background: var(--surface3); color: #eef0ff; }
+    .close-btn-end svg { width: 14px; height: 14px; }
+
+    .ftr { padding: 8px 16px; border-top: 1px solid var(--border); background: rgba(9, 16, 36, 0.9); display: flex; align-items: center; justify-content: center; gap: 5px; flex-shrink: 0; }
+    .ftr span { font-size: 10px; color: var(--text-3); }
+    .ftr strong { font-family: var(--font-h); font-size: 10px; font-weight: 700; color: var(--primary); }
+  `;
+
+  class VoiceraWidget {
+    constructor(config) {
+      this.clientId = config.clientId;
+      this.backendUrl = config.backendUrl;
+      this.state = {
+        open: false,
+        token: null,
+        sessionId: null,
+        history: [],
+        conversationHistory: [],
+        startTime: null,
+        firstMessage: '',
+        ticketId: null,
+        inactivityTimer: null,
+        warningTimer: null,
+        status: 'resolved',
+        nameCollected: false,
+        userName: ''
+      };
+      this.init();
+    }
+
+    init() {
+      this.container = document.createElement('div');
+      this.shadow = this.container.attachShadow({ mode: 'open' });
+      
+      const styleTag = document.createElement('style');
+      styleTag.textContent = STYLE;
+      this.shadow.appendChild(styleTag);
+
+      this.render();
+      document.body.appendChild(this.container);
+      this.attachEvents();
+    }
+
+    render() {
+      this.shadow.innerHTML += `
+        <button class="trigger" id="trigger">
+          <div class="trigger-pulse"></div>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </button>
+
+        <div class="widget" id="widget">
+          <div class="hdr">
+            <div class="hdr-left">
+              <div class="back-btn" id="backBtn"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></div>
+              <div class="logo-mark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+              <div class="hdr-text">
+                <div class="hdr-name" id="hdrName">Voicera Support</div>
+                <div class="hdr-status"><div class="live-dot"></div>AI online — responds instantly</div>
+              </div>
+            </div>
+            <div class="close-x" id="closeX"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+          </div>
+
+          <div class="scr on" id="scrChannel">
+            <div class="s-channel">
+              <div class="ch-hero">
+                <div class="ch-eyebrow"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Instant resolution</div>
+                <h2>How can we<br>help you today?</h2>
+                <p>Our AI resolves most issues in under 30 seconds. Pick how you'd like to connect.</p>
+              </div>
+              <div class="ch-options">
+                <div class="ch-option voice" id="optVoice">
+                  <div class="ch-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg></div>
+                  <div class="ch-text"><h3>Voice Call</h3><p>Speak naturally — AI listens and responds in real time</p></div>
+                  <span class="ch-badge">Fastest</span>
+                </div>
+                <div class="ch-divider">or</div>
+                <div class="ch-option chat" id="optChat">
+                  <div class="ch-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                  <div class="ch-text"><h3>Live Chat</h3><p>Type your issue and get a response in seconds</p></div>
+                  <span class="ch-badge">Available now</span>
+                </div>
+              </div>
+              <div class="ch-security"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>End-to-end encrypted · Your data stays private</div>
+            </div>
+          </div>
+
+          <div class="scr" id="scrChat">
+            <div class="s-chat">
+              <div class="msgs" id="msgArea"></div>
+              <div id="statusArea"></div>
+              <div class="inp-area">
+                <textarea class="inp" id="chatInp" placeholder="Type your message..." rows="1"></textarea>
+                <button class="send-btn" id="sendBtn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+              </div>
+              <div class="chat-actions"><span class="end-chat-link" id="endChatLink"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>End this chat</span></div>
+            </div>
+          </div>
+
+          <div class="scr" id="scrVoice">
+            <div class="s-voice">
+              <div class="v-aurora"></div>
+              <div class="v-orbit">
+                <div class="orbit-ring"></div><div class="orbit-ring"></div><div class="orbit-ring"></div><div class="orbit-ring"></div>
+                <div class="mic-core"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg></div>
+              </div>
+              <div style="font-size: 13px; color: rgba(238,240,255,0.55); text-align: center; margin-top: 12px">Voice support coming soon</div>
+              <button class="end-call" id="endVoiceBtn" style="margin-top: 24px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>End Call</button>
+            </div>
+          </div>
+
+          <div class="scr" id="scrCalendar">
+            <div class="s-calendar">
+              <div class="cal-header">
+                <h3>Book a specialist call</h3>
+                <p>Our AI couldn't fully resolve this. Pick a time slot that works for you.</p>
+              </div>
+              <div class="cal-spec">
+                <div class="spec-av">SK</div>
+                <div class="spec-info">
+                  <h4>Sarah Kumar</h4>
+                  <p>Senior Support Specialist</p>
+                </div>
+              </div>
+              <div class="cal-label">Available slots — next 48 hours</div>
+              <div class="cal-slots" id="calSlots"></div>
+            </div>
+          </div>
+
+          <div class="scr" id="scrEnd" style="background:#0f1930">
+            <div class="s-end">
+              <div class="end-hero">
+                <div class="end-icon" id="endIcon"></div>
+                <div class="end-title" id="endTitle" style="color:#eef0ff;font-family:Manrope,sans-serif;font-size:20px;font-weight:800;text-align:center;letter-spacing:-0.04em;margin-bottom:6px"></div>
+                <div class="end-sub" id="endSub" style="color:rgba(238,240,255,0.55);font-size:12.5px;text-align:center;line-height:1.6;font-weight:300"></div>
+                <div class="status-badge" id="statusBadge"></div>
+              </div>
+              <div class="end-card" id="endSummaryCard" style="background:#141f38;border:1px solid rgba(222,229,255,0.1);border-radius:10px;padding:14px"></div>
+              <div class="end-card" style="background:#141f38;border:1px solid rgba(222,229,255,0.1);border-radius:10px;padding:14px">
+                <div class="end-label" style="color:rgba(238,240,255,0.28);font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px">Rate your experience</div>
+                <div class="star-row" id="starRow">
+                  ${[1,2,3,4,5].map(n => `<div class="star" data-v="${n}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>`).join('')}
+                </div>
+              </div>
+              <button class="close-btn-end" id="closeEndBtn" style="color:rgba(238,240,255,0.55);background:#141f38;border:1px solid rgba(222,229,255,0.1);width:100%;border-radius:10px;padding:12px;font-family:Manrope;font-size:13px;font-weight:700;cursor:pointer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Close chat</button>
+            </div>
+          </div>
+
+          <div class="ftr"><span>Powered by</span><strong>Voicera</strong></div>
+        </div>
+      `;
+    }
+
+    attachEvents() {
+      const get = (id) => this.shadow.getElementById(id);
+      get('trigger').onclick = () => this.toggle();
+      get('closeX').onclick = () => this.toggle();
+      get('backBtn').onclick = () => this.goBack();
+      get('optChat').onclick = () => this.goToChat();
+      get('optVoice').onclick = () => this.goToVoice();
+      get('endVoiceBtn').onclick = () => this.goBack();
+      get('sendBtn').onclick = () => this.sendMsg();
+      get('endChatLink').onclick = () => this.goToEnd('resolved');
+      get('closeEndBtn').onclick = () => this.reset();
+      get('chatInp').onkeydown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          this.sendMsg();
+        }
+      };
+      get('chatInp').oninput = (e) => {
+        e.target.style.height = 'auto';
+        e.target.style.height = Math.min(e.target.scrollHeight, 90) + 'px';
+      };
+      this.shadow.querySelectorAll('.star').forEach(s => {
+        s.onclick = () => this.rate(parseInt(s.dataset.v));
+      });
+    }
+
+    toggle() {
+      this.state.open = !this.state.open;
+      const w = this.shadow.getElementById('widget');
+      const t = this.shadow.getElementById('trigger');
+      if (this.state.open) {
+        w.classList.add('open');
+        t.style.transform = 'scale(0)';
+      } else {
+        w.classList.remove('open');
+        t.style.transform = 'scale(1)';
+      }
+    }
+
+    switchScreen(id) {
+      this.shadow.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+      this.shadow.getElementById(id).classList.add('on');
+    }
+
+    goBack() {
+      if (this.state.history.length) {
+        const prev = this.state.history.pop();
+        this.switchScreen(prev);
+        if (this.state.history.length === 0) {
+          this.shadow.getElementById('backBtn').style.display = 'none';
+          this.shadow.getElementById('hdrName').textContent = 'Voicera Support';
+        }
+      }
+    }
+
+    goToVoice() {
+      this.state.history.push('scrChannel');
+      this.shadow.getElementById('backBtn').style.display = 'flex';
+      this.shadow.getElementById('hdrName').textContent = 'Voice Call';
+      this.switchScreen('scrVoice');
+    }
+
+    async goToChat() {
+      this.state.history.push('scrChannel');
+      this.shadow.getElementById('backBtn').style.display = 'flex';
+      this.shadow.getElementById('hdrName').textContent = 'Live Chat';
+      this.switchScreen('scrChat');
+      this.state.startTime = new Date();
+      
+      this.shadow.getElementById('msgArea').innerHTML = '';
+      this.shadow.getElementById('statusArea').innerHTML = '';
+      
+      this.addMsg("Hi! I am Voicera, your AI support agent. What is your name?", 'b');
+      this.startTimers();
+      
+      try {
+        const loginRes = await fetch(`${this.backendUrl}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'test@example.com', password: 'password123' })
+        });
+        const loginData = await loginRes.json();
+        this.state.token = loginData.access_token;
+      } catch (e) {
+        console.error(e);
+        this.addMsg("Something went wrong. Please try again.", 'b');
+      }
+    }
+
+    async startSession(userName) {
+      const res = await fetch(`${this.backendUrl}/api/v1/sessions/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.state.token}`
+        },
+        body: JSON.stringify({
+          client_id: this.clientId,
+          user_email: 'guest@voicera.ai',
+          user_name: userName || 'Guest',
+          channel: 'chat'
+        })
+      });
+      const data = await res.json();
+      this.state.sessionId = data.session_id;
+    }
+
+    async sendMsg() {
+      const inp = this.shadow.getElementById('chatInp');
+      const msg = inp.value.trim();
+      if (!msg) return;
+
+      if (['close','bye','goodbye','exit','end chat','quit','stop'].some(w => msg.toLowerCase().includes(w))) {
+        this.goToEnd('resolved');
+        return;
+      }
+
+      this.addMsg(msg, 'u');
+      inp.value = '';
+      inp.style.height = 'auto';
+      this.resetTimers();
+
+      if (!this.state.nameCollected) {
+        this.state.nameCollected = true;
+        this.state.userName = msg.split(' ')[0];
+        
+        if (this.state.sessionId === null) {
+          await this.startSession(this.state.userName);
+        }
+        
+        setTimeout(() => {
+          this.addMsg('Nice to meet you, ' + this.state.userName + '! What can I help you with today?', 'b');
+        }, 600);
+        return;
+      }
+
+      if (!this.state.firstMessage) {
+        this.state.firstMessage = msg;
+      }
+
+      this.state.conversationHistory.push({ role: 'user', content: msg });
+      
+      this.showTyping();
+      
+      try {
+        const res = await fetch(`${this.backendUrl}/api/v1/chat/message`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + this.state.token
+          },
+          body: JSON.stringify({
+            session_id: this.state.sessionId,
+            client_id: this.clientId,
+            message: msg,
+            conversation_history: this.state.conversationHistory
+          })
+        });
+        const data = await res.json();
+        this.removeTyping();
+        this.addMsg(data.response, 'b');
+        this.state.conversationHistory.push({ role: 'assistant', content: data.response });
+        if (data.confident) this.showHelpBtns();
+        if (data.should_escalate) {
+          this.showEscalation();
+          this.showHelpBtns();
+        }
+      } catch (e) {
+        this.removeTyping();
+        this.addMsg('Something went wrong. Please try again.', 'b');
+      }
+    }
+
+    addMsg(text, type) {
+      const area = this.shadow.getElementById('msgArea');
+      const div = document.createElement('div');
+      div.className = `msg ${type}`;
+      div.innerHTML = type === 'b' ? `
+        <div class="av"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        <div class="bbl">${text}</div>
+      ` : `<div class="bbl">${text}</div>`;
+      area.appendChild(div);
+      area.scrollTop = area.scrollHeight;
+      this.shadow.getElementById('statusArea').innerHTML = '';
+    }
+
+    showTyping() {
+      const area = this.shadow.getElementById('msgArea');
+      const div = document.createElement('div');
+      div.className = 'typing-wrap'; div.id = 'typing';
+      div.innerHTML = `<div class="av"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><div class="typing-bbl"><span></span><span></span><span></span></div>`;
+      area.appendChild(div); area.scrollTop = area.scrollHeight;
+    }
+    removeTyping() { const t = this.shadow.getElementById('typing'); if (t) t.remove(); }
+
+    showHelpBtns() {
+      const area = this.shadow.getElementById('statusArea');
+      area.innerHTML = `<div class="help-btns"><button class="help-btn yes" id="hYes">✓ That helped</button><button class="help-btn no" id="hNo">✗ Still need help</button></div>`;
+      this.shadow.getElementById('hYes').onclick = () => this.goToEnd('resolved');
+      this.shadow.getElementById('hNo').onclick = () => this.goToCalendar();
+    }
+
+    showEscalation() {
+      const area = this.shadow.getElementById('statusArea');
+      area.innerHTML = `
+        <div class="esc-bar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div>
+            <strong>Let me connect you with a specialist.</strong><br>
+            Our team has full context of this conversation. Use the button below to book a direct call.
+          </div>
+        </div>
+      `;
+    }
+
+    goToCalendar() {
+      this.state.history.push('scrChat');
+      this.shadow.getElementById('hdrName').textContent = 'Book a Call';
+      const area = this.shadow.getElementById('calSlots');
+      const slots = [
+        { d: 'Today, May 8', t: '3:30 PM IST' },
+        { d: 'Today, May 8', t: '5:00 PM IST' },
+        { d: 'Tomorrow, May 9', t: '10:00 AM IST' },
+        { d: 'Tomorrow, May 9', t: '2:00 PM IST' }
+      ];
+      area.innerHTML = slots.map(s => `
+        <div class="cal-slot">
+          <div class="slot-left">
+            <span class="slot-day">${s.d}</span>
+            <span class="slot-time">${s.t}</span>
+            <span class="slot-dur">30 minute video call</span>
+          </div>
+          <button class="slot-pick" data-slot="${s.d} ${s.t}">Book Call</button>
+        </div>
+      `).join('');
+      this.shadow.querySelectorAll('.slot-pick').forEach(b => {
+        b.onclick = () => this.book(b.dataset.slot);
+      });
+      this.switchScreen('scrCalendar');
+      this.clearTimers();
+    }
+
+    async book(slot) {
+      try {
+        const res = await fetch(`${this.backendUrl}/api/v1/tickets`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.state.token}`
+          },
+          body: JSON.stringify({
+            session_id: this.state.sessionId,
+            client_id: this.clientId,
+            user_email: 'guest@voicera.ai',
+            issue_summary: this.state.firstMessage,
+            conversation_transcript: this.state.conversationHistory,
+            urgency: 'medium'
+          })
+        });
+        const data = await res.json();
+        this.state.ticketId = data.ticket_id;
+        this.goToEnd('escalated');
+      } catch (e) {
+        console.error(e);
+        this.goToEnd('escalated');
+      }
+    }
+
+    goToEnd(status) {
+      this.state.status = status;
+      this.clearTimers();
+      const icon = this.shadow.getElementById('endIcon');
+      const title = this.shadow.getElementById('endTitle');
+      const sub = this.shadow.getElementById('endSub');
+      const badge = this.shadow.getElementById('statusBadge');
+      
+      const duration = Math.floor((new Date() - this.state.startTime) / 1000);
+      const min = Math.floor(duration / 60);
+      const sec = duration % 60;
+
+      if (status === 'resolved') {
+        icon.className = 'end-icon resolved'; icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+        title.textContent = 'All done'; sub.textContent = 'Your issue has been resolved. Here\'s a summary of this session.';
+        badge.className = 'status-badge resolved'; badge.innerHTML = `<span>Resolved</span>`;
+      } else if (status === 'escalated') {
+        icon.className = 'end-icon escalated'; icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+        title.textContent = 'Specialist booked'; sub.textContent = 'A calendar invite has been sent. Your specialist has full context.';
+        badge.className = 'status-badge escalated'; badge.innerHTML = `<span>Escalated</span>`;
+      } else {
+        icon.className = 'end-icon timeout'; icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+        title.textContent = 'Session closed'; sub.textContent = 'This chat was closed due to inactivity. You can start a new one anytime.';
+        badge.className = 'status-badge escalated'; badge.innerHTML = `<span>Timed out</span>`;
+      }
+
+      this.shadow.getElementById('endSummaryCard').innerHTML = `
+        <div class="end-row"><span class="end-label" style="color:rgba(238,240,255,0.28);font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">Topic</span><span class="end-value" style="color:#eef0ff;font-size:13px;font-weight:500">${this.state.firstMessage ? this.state.firstMessage.slice(0, 40) + (this.state.firstMessage.length > 40 ? '...' : '') : 'Support Session'}</span></div>
+        <div class="end-divider"></div>
+        <div class="end-row"><span class="end-label" style="color:rgba(238,240,255,0.28);font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">Ticket ID</span><span class="end-value mono" style="color:#bd9dff;font-family:monospace;font-size:12px;font-weight:500">#${(this.state.ticketId || this.state.sessionId || '........').slice(0, 8)}</span></div>
+        <div class="end-divider"></div>
+        <div class="end-row"><span class="end-label" style="color:rgba(238,240,255,0.28);font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">Sentiment</span><div class="sentiment-bar"><div class="sent-dot ${status === 'resolved' ? 'positive' : 'neutral'}"></div><span class="sent-label" style="color:#4ADE80;font-size:12px;font-weight:500">${status === 'resolved' ? 'Positive' : 'Neutral'}</span></div></div>
+        <div class="end-divider"></div>
+        <div class="end-row"><span class="end-label" style="color:rgba(238,240,255,0.28);font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">Duration</span><span class="end-value" style="color:#eef0ff;font-size:13px;font-weight:500">${min}m ${sec}s</span></div>
+        <div class="end-divider"></div>
+        <div class="end-row"><span class="end-label" style="color:rgba(238,240,255,0.28);font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">Channel</span><span class="end-value" style="color:#eef0ff;font-size:13px;font-weight:500">Live Chat</span></div>
+      `;
+      this.switchScreen('scrEnd');
+    }
+
+    startTimers() {
+      this.state.warningTimer = setTimeout(() => {
+        this.shadow.getElementById('statusArea').innerHTML = `<div class="warn-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Still there? If you don't respond in 60 seconds, I'll close this chat automatically.</div>`;
+      }, 60000);
+      this.state.inactivityTimer = setTimeout(() => this.goToEnd('timeout'), 120000);
+    }
+    resetTimers() { this.clearTimers(); this.startTimers(); }
+    clearTimers() { clearTimeout(this.state.warningTimer); clearTimeout(this.state.inactivityTimer); }
+
+    rate(n) {
+      this.shadow.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('active', i < n));
+    }
+
+    reset() {
+      this.state = { ...this.state, sessionId: null, token: null, history: [], conversationHistory: [], startTime: null, firstMessage: '', ticketId: null, status: 'resolved', nameCollected: false, userName: '' };
+      this.shadow.getElementById('msgArea').innerHTML = '';
+      this.shadow.getElementById('statusArea').innerHTML = '';
+      this.switchScreen('scrChannel');
+      this.toggle();
+    }
+  }
+
+  window.VoiceraWidget = VoiceraWidget;
+})();

@@ -1,12 +1,13 @@
-config.js
-.DS_Store
-node_modules/
-.env
+# Ignore secret keys and local configs
+backend/.env
+backend/ .env
+backend/venv/
+dashboard/config.js
+widget/config.js
+landing/config.js
 
-# Ignored directories and backups
+# General OS files and caches
+**/__pycache__/
+*.pyc
+.DS_Store
 .gemini/
-Voxio-Dashboard/
-*backup*.html
-*_original.html
-*_v1.html
-*.py

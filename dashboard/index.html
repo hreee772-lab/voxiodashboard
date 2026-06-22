@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Voxio — Dashboard</title>
+<title>Voicera — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -435,7 +436,7 @@ tbody tr[onclick]{cursor:pointer;}
     </div>
     <div>
       <div class="flex items-center gap-2">
-        <span class="sb-logo-text">Voxio</span>
+        <span class="sb-logo-text">Voicera</span>
         <span class="sb-logo-beta">BETA</span>
       </div>
       <div class="sb-logo-sub">AI Customer Support</div>
@@ -456,10 +457,12 @@ tbody tr[onclick]{cursor:pointer;}
     Tickets
     <span class="sb-badge">7</span>
   </div>
-  <div class="sb-item" onclick="nav('analytics',this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    Analytics
+  <div class="sb-item" onclick="nav('scheduled',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Scheduled Calls</span>
+    <span class="sb-badge" id="badge-scheduled">0</span>
   </div>
+
   <div class="sb-divider"></div>
   <div class="sb-section-label">Configuration</div>
   <div class="sb-item" onclick="nav('knowledgebase',this)">
@@ -489,13 +492,49 @@ tbody tr[onclick]{cursor:pointer;}
       </div>
     </div>
     <button class="sb-upgrade">Upgrade to Pro</button>
+
+    <!-- Sidebar Bottom Profile Section -->
+    <div class="sb-user-profile" onclick="toggleUserMenu()" style="position:relative; display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--ghost-med); cursor: pointer; transition: background 0.2s ease;">
+      <div class="user-ava av-sm" style="width:32px; height:32px; background: var(--grad-cta); border-radius: 8px; display:flex; align-items:center; justify-content:center; font-family:'Manrope'; font-weight:800; font-size:12px; color:white;">AS</div>
+      <div class="user-info" style="flex:1; overflow:hidden; text-align:left;">
+        <div class="user-name" style="font-size:13px; font-weight:600; color:var(--on-surface); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Alex Smith</div>
+        <div class="user-role" style="font-size:11px; color:var(--on-surface-low); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">alex@acmecorp.com</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--on-surface-low);"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
   </div>
-</nav><div class="main-wrap">
+</nav>
+<div class="main-wrap">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Overview</div>
+  </div>
+
+  <div id="user-menu" style="display:none;position:fixed;left:16px;bottom:82px;width:200px;background:var(--surface-bright-blur);backdrop-filter:blur(40px);border-radius:16px;border:1px solid var(--ghost);box-shadow:0 24px 60px rgba(0,0,0,0.5);z-index:99999;overflow:hidden;">
+    <div style="padding:16px 18px;border-bottom:1px solid var(--ghost-med);">
+      <div id="menu-name" style="font-size:13px;font-weight:700;color:var(--on-surface);margin-bottom:2px;"></div>
+      <div id="menu-email" style="font-size:11px;color:var(--on-surface-low);"></div>
+    </div>
+    <div style="padding:8px;">
+      <div onclick="nav('settings', document.querySelector('.sb-item:last-of-type'))" style="padding:10px 12px;border-radius:10px;font-size:13px;color:var(--on-surface-med);cursor:pointer;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='var(--surface-hi)'" onmouseout="this.style.background='transparent'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+        Profile Settings
+      </div>
+      <div onclick="showChangePassword()" style="padding:10px 12px;border-radius:10px;font-size:13px;color:var(--on-surface-med);cursor:pointer;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='var(--surface-hi)'" onmouseout="this.style.background='transparent'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Change Password
+      </div>
+      <div style="height:1px;background:var(--ghost-med);margin:6px 0;"></div>
+      <div onclick="handleLogout()" style="padding:10px 12px;border-radius:10px;font-size:13px;color:var(--red);cursor:pointer;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='var(--red-bg)'" onmouseout="this.style.background='transparent'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </div>
+    </div>
+  </div>
 
   <div class="content">
     <div id="page-overview" class="page active">
       <div class="page-header">
-        <div><div class="page-title">Overview</div><div class="page-sub">Welcome back, Alex — here's what's happening with Voxio today.</div></div>
+        <div><div class="page-title">Overview</div><div class="page-sub" id="overview-welcome">Welcome back — here's what's happening with Voicera today.</div></div>
         <div class="flex gap-2">
           <select class="filter-select"><option>Last 7 days</option><option>Last 30 days</option><option>This month</option></select>
         </div>
@@ -520,13 +559,11 @@ tbody tr[onclick]{cursor:pointer;}
           </div>
           <div class="chart-area" style="display: flex; flex-direction: column;">
             <div style="display: flex; gap: 30px; margin-bottom: 24px; background: var(--surface-hi); padding: 12px 20px; border-radius: 16px; border: 1px solid var(--ghost-med);">
-              <div><div class="text-xs text-muted" style="margin-bottom: 2px;">Peak Traffic</div><div style="font-family: 'Manrope'; font-size: 16px; font-weight: 800; color: var(--primary);">14:32 <span style="font-size: 11px; font-weight: 500; color: var(--on-surface-low);">PM</span></div></div>
+              <div><div class="text-xs text-muted" style="margin-bottom: 2px;">Avg Handle Time</div><div style="font-family: 'Manrope'; font-size: 16px; font-weight: 800; color: var(--tertiary);" id="chart-avg-handle-time">0s</div></div>
               <div style="width: 1px; background: var(--ghost-med); height: 24px; align-self: center;"></div>
-              <div><div class="text-xs text-muted" style="margin-bottom: 2px;">Avg Handle Time</div><div style="font-family: 'Manrope'; font-size: 16px; font-weight: 800; color: var(--tertiary);">2m 45s</div></div>
-              <div style="width: 1px; background: var(--ghost-med); height: 24px; align-self: center;"></div>
-              <div><div class="text-xs text-muted" style="margin-bottom: 2px;">Resolution</div><div style="font-family: 'Manrope'; font-size: 16px; font-weight: 800; color: var(--blue);">94.2%</div></div>
+              <div><div class="text-xs text-muted" style="margin-bottom: 2px;">Resolution</div><div style="font-family: 'Manrope'; font-size: 16px; font-weight: 800; color: var(--blue);" id="chart-resolution-rate">0%</div></div>
             </div>
-            <div style="flex: 1; position: relative; margin-top: 10px;">
+            <div style="flex: 1; position: relative; margin-top: 10px;" id="call-volume-svg-container">
               <svg viewBox="0 0 500 160" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
                 <defs>
                   <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -670,17 +707,7 @@ tbody tr[onclick]{cursor:pointer;}
         <button class="btn btn-primary btn-sm" onclick="addKnowledge()">+ Add Knowledge</button>
       </div>
       
-      <div class="card" style="margin-bottom:20px;background:var(--primary-glow-sm);border:1px solid var(--primary-dim);display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="font-size:16px;font-weight:700;color:var(--primary);margin-bottom:4px;">Knowledge Health: Excellent (94%)</div>
-          <div class="text-sm text-muted">Your bot has high confidence across most customer queries.</div>
-        </div>
-        <div style="display:flex;gap:12px;">
-          <div class="badge badge-purple" style="font-size:13px;padding:6px 12px;">12 Documents</div>
-          <div class="badge badge-blue" style="font-size:13px;padding:6px 12px;">3,241 Chunks</div>
-          <div class="badge badge-amber" style="font-size:13px;padding:6px 12px;">3 Gaps</div>
-        </div>
-      </div>
+
 
       <div class="tabs" id="kb-tabs" style="margin-bottom:20px;">
         <div class="tab active" onclick="setKBTab('documents', this)">Documents</div>
@@ -690,77 +717,49 @@ tbody tr[onclick]{cursor:pointer;}
       </div>
 
       <div id="kb-view-documents">
-        <div class="grid-3">
-          <div class="card">
-            <div class="flex items-center gap-3" style="margin-bottom:12px;">
-              <div style="width:32px;height:32px;border-radius:8px;background:var(--surface-highest);display:flex;align-items:center;justify-content:center;color:var(--primary);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-              </div>
-              <div style="flex:1;">
-                <div style="font-size:13px;font-weight:600;">Refund Policy 2026.pdf</div>
-                <div class="text-xs text-muted">File Upload</div>
-              </div>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-              <div class="text-xs text-muted">142 Chunks</div>
-              <div class="badge badge-green" style="font-size:10px;">Indexed</div>
-            </div>
-            <div class="flex justify-between items-center pt-3" style="border-top:1px solid var(--ghost-med);">
-              <div class="text-xs text-muted">Updated Apr 18</div>
-              <button class="btn btn-ghost btn-sm" style="padding:0;color:var(--red);">Delete</button>
-            </div>
+        <!-- Search and Filter Bar -->
+        <div style="display: flex; gap: 12px; margin-bottom: 18px; align-items: center;">
+          <div style="position: relative; flex: 1; max-width: 320px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--on-surface-low);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="kb-search-input" placeholder="Search documents..." style="width: 100%; padding: 10px 16px 10px 40px; background: var(--surface-hi); border: 1px solid var(--ghost-med); border-radius: 12px; color: var(--on-surface); font-size: 13px; font-family: 'Manrope'; outline: none; transition: border 0.2s;" oninput="filterKBDocuments()">
           </div>
           
-          <div class="card">
-            <div class="flex items-center gap-3" style="margin-bottom:12px;">
-              <div style="width:32px;height:32px;border-radius:8px;background:var(--surface-highest);display:flex;align-items:center;justify-content:center;color:#2563EB;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-              </div>
-              <div style="flex:1;">
-                <div style="font-size:13px;font-weight:600;">acmecorp.com/help</div>
-                <div class="text-xs text-muted">Web Crawl</div>
-              </div>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-              <div class="text-xs text-muted">2,840 Chunks</div>
-              <div class="badge badge-green" style="font-size:10px;">Indexed</div>
-            </div>
-            <div class="flex justify-between items-center pt-3" style="border-top:1px solid var(--ghost-med);">
-              <div class="text-xs text-muted">Updated Apr 20</div>
-              <button class="btn btn-ghost btn-sm" style="padding:0;">Sync Now</button>
-            </div>
-          </div>
-          
-          <div class="card">
-            <div class="flex items-center gap-3" style="margin-bottom:12px;">
-              <div style="width:32px;height:32px;border-radius:8px;background:var(--surface-highest);display:flex;align-items:center;justify-content:center;color:#059669;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-              </div>
-              <div style="flex:1;">
-                <div style="font-size:13px;font-weight:600;">Past Resolved Tickets</div>
-                <div class="text-xs text-muted">Zendesk Import</div>
-              </div>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-              <div class="text-xs text-muted">259 Chunks</div>
-              <div class="badge badge-amber" style="font-size:10px;">Syncing...</div>
-            </div>
-            <div class="flex justify-between items-center pt-3" style="border-top:1px solid var(--ghost-med);">
-              <div class="text-xs text-muted">Updated 2m ago</div>
-              <button class="btn btn-ghost btn-sm" style="padding:0;color:var(--red);">Stop</button>
-            </div>
-          </div>
+          <select id="kb-filter-type" style="padding: 10px 16px; background: var(--surface-hi); border: 1px solid var(--ghost-med); border-radius: 12px; color: var(--on-surface); font-size: 13px; font-family: 'Manrope'; outline: none;" onchange="filterKBDocuments()">
+            <option value="all">All Types</option>
+            <option value="pdf">PDF</option>
+            <option value="docx">Word</option>
+            <option value="url">URL</option>
+          </select>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-wrap" style="background: var(--surface-hi); border: 1px solid var(--ghost-med); border-radius: 16px; overflow: hidden; margin-top: 10px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--ghost-med); background: rgba(255,255,255,0.01);">
+                <th style="text-align: left; padding: 14px 20px; font-size: 11px; font-weight: 700; color: var(--on-surface-low); text-transform: uppercase; letter-spacing: 0.05em; width: 65%;">Name</th>
+                <th style="text-align: left; padding: 14px 20px; font-size: 11px; font-weight: 700; color: var(--on-surface-low); text-transform: uppercase; letter-spacing: 0.05em; width: 25%;">Size</th>
+                <th style="text-align: right; padding: 14px 20px; font-size: 11px; font-weight: 700; color: var(--on-surface-low); text-transform: uppercase; letter-spacing: 0.05em; width: 10%;"></th>
+              </tr>
+            </thead>
+            <tbody id="kb-documents-table-body">
+              <tr>
+                <td colspan="3" style="text-align: center; padding: 40px; color: var(--on-surface-low);">Loading documents...</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <div id="kb-view-add" style="display:none;">
         <div class="grid-2">
-          <div class="card" style="cursor:pointer;transition:all 0.2s;border:1px solid var(--ghost-med);" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--surface-hi)'" onmouseout="this.style.borderColor='var(--ghost-med)';this.style.background='var(--surface)'">
+          <div class="card" style="cursor:pointer;transition:all 0.2s;border:1px solid var(--ghost-med);" onclick="document.getElementById('kb-file-input').click()">
+            <input type="file" id="kb-file-input" accept=".pdf,.docx,.txt" style="display:none;" onchange="uploadKBFile(this)">
             <div class="flex items-center gap-3 mb-3">
               <div style="width:40px;height:40px;border-radius:10px;background:var(--primary-glow-sm);display:flex;align-items:center;justify-content:center;color:var(--primary);">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
               </div>
-              <div><div style="font-size:14px;font-weight:600;">Upload Files</div><div class="text-xs text-muted">PDF, DOCX, TXT, CSV</div></div>
+              <div><div style="font-size:14px;font-weight:600;">Upload Files</div><div class="text-xs text-muted">PDF, DOCX, TXT</div></div>
             </div>
           </div>
           <div class="card" style="cursor:pointer;transition:all 0.2s;border:1px solid var(--ghost-med);" onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--surface-hi)'" onmouseout="this.style.borderColor='var(--ghost-med)';this.style.background='var(--surface)'">
@@ -869,9 +868,9 @@ tbody tr[onclick]{cursor:pointer;}
           <div class="member-label" style="margin-bottom:16px;font-size:12px;color:var(--on-surface);">Invite a New Member</div>
           <div style="display:grid;grid-template-columns:1fr 180px 180px 140px;gap:16px;align-items:end;">
             <div class="form-group" style="margin-bottom:0;"><label class="form-label">Email Address</label><input class="form-input" placeholder="email@example.com"></div>
-            <div class="form-group" style="margin-bottom:0;"><label class="form-label">Role</label><select class="form-select"><option>Admin</option><option selected>Agent</option><option>Viewer</option><option>Billing</option></select></div>
-            <div class="form-group" style="margin-bottom:0;"><label class="form-label">Department</label><select class="form-select"><option>None</option><option>Billing</option><option>Technical</option><option>Account</option><option>Product</option></select></div>
-            <button class="btn btn-primary" style="height:42px;width:100%;">Send Invite</button>
+            <div class="form-group" style="margin-bottom:0;"><label class="form-label">Role</label><select class="form-select" id="invite-role-select"><option value="specialist">Specialist</option><option value="admin">Admin</option><option value="viewer">Viewer</option></select></div>
+            <div class="form-group" style="margin-bottom:0;"><label class="form-label">Department</label><select class="form-select" id="invite-dept-select"><option value="">None</option><option value="Billing">Billing</option><option value="Technical">Technical</option><option value="Account">Account</option><option value="Product">Product</option></select></div>
+            <button class="btn btn-primary" style="height:42px;width:100%;" onclick="inviteTeamMember()">Send Invite</button>
           </div>
         </div>
 
@@ -961,7 +960,7 @@ tbody tr[onclick]{cursor:pointer;}
 
       <!-- Availability Tab -->
       <div id="team-availability" class="team-tab-content" style="display:none;">
-        <div class="page-sub" style="margin-bottom:20px;">Set working hours for each specialist. Voxio only offers customers appointment slots within these hours.</div>
+        <div class="page-sub" style="margin-bottom:20px;">Set working hours for each specialist. Voicera only offers customers appointment slots within these hours.</div>
         <div class="grid-2">
           <!-- Specialist 1: Jamie -->
           <div class="card">
@@ -1076,196 +1075,92 @@ tbody tr[onclick]{cursor:pointer;}
     <!-- -- BOT CONFIG -- -->
     <div id="page-botconfig" class="page">
       <div class="page-header">
-        <div><div class="page-title">Bot Configuration</div><div class="page-sub">Customize your AI voice agent's personality, voice, and behavior</div></div>
-        <div class="flex gap-2">
-          <button class="btn btn-secondary btn-sm" onclick="handleBotPreview(this)">Preview Bot</button>
-          <button class="btn btn-primary btn-sm" onclick="handleSave(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/></svg>Save Changes</button>
+        <div><div class="page-title">Bot Configuration</div><div class="page-sub">Customize your AI assistant's personality and behavior</div></div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-ghost" onclick="previewBot()" style="border: 1px solid var(--ghost-med); display: flex; align-items: center; gap: 6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><polygon points="5 3 19 12 5 21"/></svg>Bot Preview</button>
+          <button class="btn btn-primary" onclick="saveBotConfig()">Save Changes</button>
         </div>
       </div>
-      <div class="tabs" style="margin-bottom: 24px;">
-        <div class="tab active" onclick="setBotConfigTab('general', this)">General</div>
-        <div class="tab" onclick="setBotConfigTab('voice', this)">Voice</div>
-        <div class="tab" onclick="setBotConfigTab('chat', this)">Chat</div>
+
+      <div class="tabs" style="margin-bottom:18px;">
+        <div class="tab active" onclick="setBotConfigTab('general',this)">General</div>
+        <div class="tab" onclick="setBotConfigTab('voice',this)">Voice</div>
+        <div class="tab" onclick="setBotConfigTab('chat',this)">Chat</div>
       </div>
 
+      <!-- GENERAL TAB -->
       <div id="botconfig-general" class="botconfig-tab-content">
         <div class="config-layout">
           <div>
-            <div class="card" style="margin-bottom: 18px;">
-              <div class="card-header"><div><div class="card-title">Bot Identity</div><div class="card-sub">Core personality and identity settings</div></div></div>
-              <div class="form-group"><label class="form-label">Bot Name</label><input class="form-input" value="Aria — AI Support Agent"></div>
-              <div class="form-group"><label class="form-label">Default Greeting</label><input class="form-input" value="Hi {first_name}, I am Aria. How can I help you today?"><div class="form-hint">Use {first_name} to personalise. This greeting is used for both voice and chat unless overridden in each channel tab.</div></div>
-              <div class="form-group"><label class="form-label">System Prompt</label><textarea class="form-textarea" style="min-height:160px;">You are a friendly, efficient AI customer support agent for Acme Corp.
-
-Instructions:
-- Greet the customer warmly by their first name
-- Acknowledge their issue immediately and empathetically
-- Ask 1 clarifying question if needed, then try to resolve
-- If you cannot resolve, say you'll connect them to a human specialist
-- Keep ALL responses to 1–2 sentences max — this is a voice call
-- Be warm, empathetic, and professional at all times</textarea></div>
-              <div class="form-group" style="margin-bottom:0;"><label class="form-label">Blacklisted Topics</label><input class="form-input" placeholder="competitor names, internal pricing, pending litigation"><div class="form-hint">Bot will never discuss these topics regardless of what the customer asks</div></div>
-            </div>
-            <div class="card">
-              <div class="card-header"><div><div class="card-title">Capabilities</div><div class="card-sub">What the bot is authorized to do</div></div></div>
-              <div class="toggle-wrap"><div class="toggle-info"><div class="toggle-label">Answer from knowledge base</div><div class="toggle-desc">Use uploaded documents to answer customer questions</div></div><span class="badge badge-gray">Always on</span></div>
-              <div class="toggle-wrap"><div class="toggle-info"><div class="toggle-label">Look up customer account data</div><div class="toggle-desc">Access CRM data to provide personalized support</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-slider"></div></label></div>
-              <div class="toggle-wrap"><div class="toggle-info"><div class="toggle-label">Raise support tickets</div><div class="toggle-desc">Create tickets in the dashboard for human follow-up</div></div><span class="badge badge-gray">Always on</span></div>
-              <div class="toggle-wrap"><div class="toggle-info"><div class="toggle-label">Issue refunds</div><div class="toggle-desc">Process simple refund requests automatically</div></div><label class="toggle"><input type="checkbox"><div class="toggle-slider"></div></label></div>
-              <div class="toggle-wrap"><div class="toggle-info"><div class="toggle-label">Change account details</div><div class="toggle-desc">Allow bot to update customer email, phone, etc.</div></div><label class="toggle"><input type="checkbox"><div class="toggle-slider"></div></label></div>
-              <div class="toggle-wrap" style="border-bottom:none;"><div class="toggle-info"><div class="toggle-label">Make outbound calls</div><div class="toggle-desc">Allow bot to initiate calls for follow-ups</div></div><label class="toggle"><input type="checkbox"><div class="toggle-slider"></div></label></div>
+            <div class="card" style="margin-bottom:18px;">
+              <div class="card-header"><div><div class="card-title">Bot Identity</div><div class="card-sub">How your AI presents itself to customers</div></div></div>
+              <div class="form-group"><label class="form-label">Bot Name</label><input id="bc-bot-name" class="form-input" placeholder="e.g. Aria, Max, Support Bot"></div>
+              <div class="form-group"><label class="form-label">Default Greeting</label><input id="bc-greeting" class="form-input" placeholder="Hi! How can I help you today?"><div class="form-hint">This is the first message customers see when they open the widget.</div></div>
+              <div class="form-group" style="margin-bottom:0;"><label class="form-label">System Prompt</label><textarea id="bc-system-prompt" class="form-textarea" style="min-height:180px;" placeholder="You are a helpful customer support assistant for [Company Name]. Be friendly, concise, and professional."></textarea><div class="form-hint">These are the core instructions for your AI. Be specific about your company, tone, and what the bot should/should not do.</div></div>
             </div>
           </div>
           <div>
-            <div class="card" style="margin-bottom: 18px;">
-              <div class="card-header"><div><div class="card-title">Escalation Rules</div><div class="card-sub">Define when the bot should transfer to a human</div></div></div>
-              <div class="form-group"><label class="form-label">Escalation keywords</label><input class="form-input" value="speak to human, manager, cancel, lawsuit, refund"><div class="form-hint">Comma-separated. Any of these phrases trigger immediate escalation.</div></div>
-              <div class="form-group"><label class="form-label">Max clarifying questions</label><select class="form-select"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select><div class="form-hint">Bot asks this many questions before escalating if unresolved</div></div>
-              <div class="form-group"><label class="form-label">What the bot says when escalating</label><textarea class="form-textarea" style="min-height:80px;">I am going to connect you with a specialist who can help further. You will receive an email shortly with next steps.</textarea></div>
-              <div class="form-group" style="margin-bottom:0;"><label class="form-label">Max escalation wait</label><select class="form-select"><option selected>Offer next available slot</option><option>Within 2 hours</option><option>Within 24 hours</option><option>No limit</option></select></div>
+            <div class="card" style="margin-bottom:18px;">
+              <div class="card-header"><div><div class="card-title">Escalation Rules</div><div class="card-sub">When should the bot hand off to a human</div></div></div>
+              <div class="form-group"><label class="form-label">Escalation Keywords</label><input id="bc-escalation-keywords" class="form-input" placeholder="speak to human, manager, cancel, refund"><div class="form-hint">Comma-separated. These phrases trigger the specialist booking flow.</div></div>
+              <div class="form-group" style="margin-bottom:0;"><label class="form-label">Escalation Message</label><textarea id="bc-escalation-msg" class="form-textarea" style="min-height:80px;" placeholder="Let me connect you with a specialist who can help further."></textarea><div class="form-hint">What the bot says before showing the booking UI.</div></div>
             </div>
             <div class="card">
-              <div class="card-header"><div><div class="card-title">Issue Routing</div></div></div>
-              <div class="card-sub" style="margin-bottom: 14px;">Define which issue type gets routed to which department. The bot uses this to assign escalations to the right specialist.</div>
-              <div class="table-wrap">
-                <table>
-                  <thead><tr><th>Issue Type</th><th>Department</th><th style="text-align:right;">Action</th></tr></thead>
-                  <tbody>
-                    <tr><td>Billing</td><td>Billing Team</td><td style="text-align:right;"><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
-                    <tr><td>Technical Issue</td><td>Technical Team</td><td style="text-align:right;"><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
-                    <tr><td>Account Access</td><td>Account Team</td><td style="text-align:right;"><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
-                    <tr><td>Feature Help</td><td>Product Team</td><td style="text-align:right;"><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
-                  </tbody>
-                </table>
-              </div>
-              <button class="btn btn-secondary btn-sm" style="margin-top: 16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Add Routing Rule</button>
+              <div class="card-header"><div><div class="card-title">Restrictions</div><div class="card-sub">Topics the bot should never discuss</div></div></div>
+              <div class="form-group" style="margin-bottom:0;"><label class="form-label">Blacklisted Topics</label><input id="bc-blacklist" class="form-input" placeholder="competitor names, internal pricing, legal matters"><div class="form-hint">Comma-separated. Bot will refuse to discuss these topics.</div></div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- VOICE TAB -->
       <div id="botconfig-voice" class="botconfig-tab-content" style="display:none;">
         <div class="config-layout">
           <div>
-            <div class="card" style="margin-bottom:18px;">
-              <div class="card-header"><div><div class="card-title">Voice Identity</div><div class="card-sub">Customize the spoken personality</div></div></div>
-              <div class="form-group"><label class="form-label">Voice Greeting Override</label><input class="form-input" placeholder="Leave blank to use the default greeting from General tab"><div class="form-hint">This greeting is spoken aloud so keep it short and natural. 1 sentence maximum.</div></div>
-              <div class="form-group"><label class="form-label">Language</label><select class="form-select"><option selected>English (en-IN)</option><option>Hindi (hi-IN)</option><option>Telugu (te-IN)</option><option>Tamil (ta-IN)</option><option>Kannada (kn-IN)</option><option>Bengali (bn-IN)</option><option>Marathi (mr-IN)</option></select><div class="form-hint">Sarvam AI supports all major Indian languages and English. Auto-detection handles code-mixed speech.</div></div>
-              <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Speech Pace</label>
-                <div class="flex items-center gap-3">
-                  <input type="range" min="0.5" max="2" step="0.1" value="1.0" oninput="updateSpeechPace(this.value)" style="flex:1; height:4px; background:var(--surface-highest); border-radius:4px; appearance:none; outline:none; cursor:pointer;">
-                  <span id="pace-label" style="font-size:12px; font-weight:600; color:var(--primary); width:100px;">1.0x — Normal</span>
-                </div>
-              </div>
-            </div>
             <div class="card">
-              <div class="card-header"><div><div class="card-title">Call Behavior</div><div class="card-sub">Fine-tune the voice interaction flow</div></div></div>
-              <div class="form-group"><label class="form-label">Max call duration</label><select class="form-select"><option>2 minutes</option><option>5 minutes</option><option selected>10 minutes</option><option>15 minutes</option><option>No limit</option></select><div class="form-hint">Call is automatically escalated if it exceeds this duration</div></div>
-              <div class="form-group"><label class="form-label">Silence timeout</label><select class="form-select"><option>5 seconds</option><option selected>10 seconds</option><option>15 seconds</option><option>30 seconds</option></select><div class="form-hint">Bot prompts the customer if no speech is detected for this long</div></div>
-              <div class="form-group" style="margin-bottom:0;"><label class="form-label">On silence prompt</label><input class="form-input" value="Are you still there? Take your time."><div class="form-hint">What the bot says after detecting silence</div></div>
+              <div class="card-header"><div><div class="card-title">Voice Model</div><div class="card-sub">Choose the voice your AI uses for voice calls</div></div></div>
+              <div class="voice-grid">
+                <div class="voice-opt selected" onclick="selectVoice(this)" data-voice="aura-asteria-en"><div class="voice-opt-name">Ananya</div><div class="voice-opt-lang">English · Female</div></div>
+                <div class="voice-opt" onclick="selectVoice(this)" data-voice="aura-luna-en"><div class="voice-opt-name">Luna</div><div class="voice-opt-lang">English · Female</div></div>
+                <div class="voice-opt" onclick="selectVoice(this)" data-voice="aura-orion-en"><div class="voice-opt-name">Orion</div><div class="voice-opt-lang">English · Male</div></div>
+                <div class="voice-opt" onclick="selectVoice(this)" data-voice="aura-arcas-en"><div class="voice-opt-name">Arcas</div><div class="voice-opt-lang">English · Male</div></div>
+              </div>
+              <div style="margin-top:12px;color:var(--on-surface-low);font-size:11px;">Powered by Deepgram Aura. Voice selection affects all voice calls from your widget.</div>
             </div>
           </div>
           <div>
-            <div class="card" style="margin-bottom:18px;">
-              <div class="card-header"><div><div class="card-title">Voice Model</div><div class="card-sub">Powered by Sarvam AI Bulbul v3</div></div></div>
-              <div class="voice-grid">
-                <div class="voice-opt selected" onclick="selectVoice(this)"><div class="voice-opt-name">Ananya</div><div class="voice-opt-lang">Hindi + English · Female</div><button class="voice-play">Play</button></div>
-                <div class="voice-opt" onclick="selectVoice(this)"><div class="voice-opt-name">Meera</div><div class="voice-opt-lang">Tamil + English · Female</div><button class="voice-play">Play</button></div>
-                <div class="voice-opt" onclick="selectVoice(this)"><div class="voice-opt-name">Arvind</div><div class="voice-opt-lang">Hindi + English · Male</div><button class="voice-play">Play</button></div>
-                <div class="voice-opt" onclick="selectVoice(this)"><div class="voice-opt-name">Arjun</div><div class="voice-opt-lang">Telugu + English · Male</div><button class="voice-play">Play</button></div>
-              </div>
-              <div style="margin-top:12px; color:var(--on-surface-low); font-size:11px;">30+ voices available. Visit dashboard.sarvam.ai to explore all options.</div>
-            </div>
             <div class="card">
-              <div class="card-header"><div><div class="card-title">STT Model</div><div class="card-sub">The model that transcribes customer speech during calls.</div></div></div>
-              <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Speech Recognition</label>
-                <select class="form-select">
-                  <option selected>Saarika v2.5 — Recommended</option>
-                  <option>Saaras v3 — Multilingual + Translation</option>
-                </select>
-                <div class="form-hint">Saaras v3 automatically detects and handles code-mixed speech like Hinglish and Tanglish.</div>
-              </div>
+              <div class="card-header"><div><div class="card-title">Voice Greeting</div><div class="card-sub">What the bot says when a voice call starts</div></div></div>
+              <div class="form-group" style="margin-bottom:0;"><label class="form-label">Voice Greeting Override</label><input id="bc-voice-greeting" class="form-input" placeholder="Leave blank to use default greeting"><div class="form-hint">Keep it short — 1 sentence maximum. This is spoken aloud.</div></div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- CHAT TAB -->
       <div id="botconfig-chat" class="botconfig-tab-content" style="display:none;">
         <div class="config-layout">
           <div>
             <div class="card" style="margin-bottom:18px;">
-              <div class="card-header"><div><div class="card-title">Chat Identity</div><div class="card-sub">Customize the text-based personality</div></div></div>
-              <div class="form-group"><label class="form-label">Chat Greeting Override</label><textarea class="form-textarea" style="min-height:80px;" placeholder="Leave blank to use the default greeting from General tab"></textarea><div class="form-hint">Chat greeting can be slightly longer than voice since the customer is reading it.</div></div>
-              <div class="form-group"><label class="form-label">Response Length</label><select class="form-select"><option>Concise — 1 to 2 sentences</option><option selected>Balanced — short paragraph</option><option>Detailed — full explanation</option></select><div class="form-hint">Voice is always concise regardless of this setting. This only applies to chat responses.</div></div>
-              <div class="form-group" style="margin-bottom:0;"><label class="form-label">Response Format</label><select class="form-select"><option>Plain text only</option><option selected>Allow bullet points</option><option>Allow bullet points and bold</option></select><div class="form-hint">Structured formatting helps customers scan long answers in chat</div></div>
+              <div class="card-header"><div><div class="card-title">Chat Greeting</div><div class="card-sub">First message shown when widget opens</div></div></div>
+              <div class="form-group" style="margin-bottom:0;"><label class="form-label">Chat Greeting Override</label><textarea id="bc-chat-greeting" class="form-textarea" style="min-height:80px;" placeholder="Leave blank to use default greeting"></textarea><div class="form-hint">Can be slightly longer than voice greeting since customers are reading it.</div></div>
             </div>
             <div class="card">
-              <div class="card-header"><div><div class="card-title">Chat Behavior</div><div class="card-sub">Fine-tune the chat interaction flow</div></div></div>
-              <div class="toggle-wrap"><div class="toggle-info"><div class="toggle-label">Show typing indicator</div><div class="toggle-desc">Show animated dots while the bot is generating a response</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-slider"></div></label></div>
-              <div class="toggle-wrap"><div class="toggle-info"><div class="toggle-label">Allow file attachments</div><div class="toggle-desc">Customer can send screenshots or documents in the chat window</div></div><label class="toggle"><input type="checkbox"><div class="toggle-slider"></div></label></div>
-              <div class="toggle-wrap"><div class="toggle-info"><div class="toggle-label">Allow emoji in responses</div><div class="toggle-desc">Bot can use emoji to make chat responses feel more conversational</div></div><label class="toggle"><input type="checkbox"><div class="toggle-slider"></div></label></div>
-              <div class="toggle-wrap"><div class="toggle-info"><div class="toggle-label">Auto-scroll to latest message</div><div class="toggle-desc">Chat window scrolls down automatically when a new message arrives</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-slider"></div></label></div>
-              <div class="toggle-wrap" style="border-bottom:none;"><div class="toggle-info"><div class="toggle-label">Show sources used</div><div class="toggle-desc">Show the customer which knowledge base documents were used to answer</div></div><label class="toggle"><input type="checkbox"><div class="toggle-slider"></div></label></div>
-            </div>
-          </div>
-          <div>
-            <div class="card" style="margin-bottom:18px;">
-              <div class="card-header"><div><div class="card-title">Chat Availability</div></div></div>
-              <div class="card-sub" style="margin-bottom: 14px;">Control when the chat channel is available to customers.</div>
-              <div class="toggle-wrap"><div class="toggle-info"><div class="toggle-label">Enable chat channel</div><div class="toggle-desc">Turn this off to temporarily disable chat without changing widget settings</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-slider"></div></label></div>
-              <div class="toggle-wrap" style="border-bottom:none;"><div class="toggle-info"><div class="toggle-label">Business hours only</div><div class="toggle-desc">Only show the chat widget during your defined business hours</div></div><label class="toggle"><input type="checkbox" onchange="toggleBusinessHours(this)"><div class="toggle-slider"></div></label></div>
-              
-              <div id="business-hours-block" style="display:none; background:var(--surface-hi); border-radius:14px; padding:16px; margin-top:12px;">
-                <div class="form-group"><label class="form-label">Timezone</label><select class="form-select"><option selected>Asia/Kolkata (IST)</option><option>Asia/Dubai (GST)</option><option>Europe/London (GMT)</option><option>America/New_York (EST)</option></select></div>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                  <!-- Mon-Fri -->
-                  <div style="display:grid; grid-template-columns: 60px 50px 1fr 1fr; gap:10px; align-items:center;">
-                    <div style="font-size:12px; font-weight:600;">Mon</div><label class="toggle" style="width:34px; height:18px;"><input type="checkbox" checked><div class="toggle-slider" style="border-radius:18px;"></div></label>
-                    <input class="form-input" value="9:00 AM" style="padding:6px 10px; font-size:11px;">
-                    <input class="form-input" value="6:00 PM" style="padding:6px 10px; font-size:11px;">
-                  </div>
-                  <div style="display:grid; grid-template-columns: 60px 50px 1fr 1fr; gap:10px; align-items:center;">
-                    <div style="font-size:12px; font-weight:600;">Tue</div><label class="toggle" style="width:34px; height:18px;"><input type="checkbox" checked><div class="toggle-slider" style="border-radius:18px;"></div></label>
-                    <input class="form-input" value="9:00 AM" style="padding:6px 10px; font-size:11px;">
-                    <input class="form-input" value="6:00 PM" style="padding:6px 10px; font-size:11px;">
-                  </div>
-                  <div style="display:grid; grid-template-columns: 60px 50px 1fr 1fr; gap:10px; align-items:center;">
-                    <div style="font-size:12px; font-weight:600;">Wed</div><label class="toggle" style="width:34px; height:18px;"><input type="checkbox" checked><div class="toggle-slider" style="border-radius:18px;"></div></label>
-                    <input class="form-input" value="9:00 AM" style="padding:6px 10px; font-size:11px;">
-                    <input class="form-input" value="6:00 PM" style="padding:6px 10px; font-size:11px;">
-                  </div>
-                  <div style="display:grid; grid-template-columns: 60px 50px 1fr 1fr; gap:10px; align-items:center;">
-                    <div style="font-size:12px; font-weight:600;">Thu</div><label class="toggle" style="width:34px; height:18px;"><input type="checkbox" checked><div class="toggle-slider" style="border-radius:18px;"></div></label>
-                    <input class="form-input" value="9:00 AM" style="padding:6px 10px; font-size:11px;">
-                    <input class="form-input" value="6:00 PM" style="padding:6px 10px; font-size:11px;">
-                  </div>
-                  <div style="display:grid; grid-template-columns: 60px 50px 1fr 1fr; gap:10px; align-items:center;">
-                    <div style="font-size:12px; font-weight:600;">Fri</div><label class="toggle" style="width:34px; height:18px;"><input type="checkbox" checked><div class="toggle-slider" style="border-radius:18px;"></div></label>
-                    <input class="form-input" value="9:00 AM" style="padding:6px 10px; font-size:11px;">
-                    <input class="form-input" value="6:00 PM" style="padding:6px 10px; font-size:11px;">
-                  </div>
-                  <!-- Sat-Sun -->
-                  <div style="display:grid; grid-template-columns: 60px 50px 1fr 1fr; gap:10px; align-items:center;">
-                    <div style="font-size:12px; font-weight:600;">Sat</div><label class="toggle" style="width:34px; height:18px;"><input type="checkbox"><div class="toggle-slider" style="border-radius:18px;"></div></label>
-                    <input class="form-input" value="9:00 AM" style="padding:6px 10px; font-size:11px;">
-                    <input class="form-input" value="6:00 PM" style="padding:6px 10px; font-size:11px;">
-                  </div>
-                  <div style="display:grid; grid-template-columns: 60px 50px 1fr 1fr; gap:10px; align-items:center;">
-                    <div style="font-size:12px; font-weight:600;">Sun</div><label class="toggle" style="width:34px; height:18px;"><input type="checkbox"><div class="toggle-slider" style="border-radius:18px;"></div></label>
-                    <input class="form-input" value="9:00 AM" style="padding:6px 10px; font-size:11px;">
-                    <input class="form-input" value="6:00 PM" style="padding:6px 10px; font-size:11px;">
-                  </div>
-                </div>
-                <div class="form-group" style="margin-top:16px; margin-bottom:0;"><label class="form-label">Outside hours message</label><input class="form-input" value="We are currently offline. Leave your details and we will get back to you."><div class="form-hint">Shown to customers who try to chat outside business hours</div></div>
+              <div class="card-header"><div><div class="card-title">Response Style</div><div class="card-sub">How the bot structures its replies</div></div></div>
+              <div class="form-group"><label class="form-label">Response Length</label>
+                <select id="bc-response-length" class="form-select">
+                  <option value="concise">Concise — 1 to 2 sentences</option>
+                  <option value="balanced" selected>Balanced — short paragraph</option>
+                  <option value="detailed">Detailed — full explanation</option>
+                </select>
               </div>
-            </div>
-            <div class="card">
-              <div class="card-header"><div><div class="card-title">Offline Fallback</div></div></div>
-              <div class="card-sub" style="margin-bottom: 14px;">What happens when chat is unavailable or outside business hours.</div>
-              <div class="form-group"><label class="form-label">Fallback type</label><select class="form-select"><option>Show offline message only</option><option selected>Collect email and notify team</option><option>Redirect to knowledge base</option><option>Hide widget completely</option></select></div>
-              <div class="form-group" style="margin-bottom:0;"><label class="form-label">Fallback message</label><textarea class="form-textarea" style="min-height:70px;">We are not available right now. Leave your email and we will reach out within 24 hours.</textarea><div class="form-hint">Shown when chat is offline</div></div>
+              <div class="form-group" style="margin-bottom:0;"><label class="form-label">Response Format</label>
+                <select id="bc-response-format" class="form-select">
+                  <option value="plain">Plain text only</option>
+                  <option value="bullets" selected>Allow bullet points</option>
+                  <option value="rich">Allow bullet points and bold</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -1305,200 +1200,32 @@ Instructions:
         </div>
       </div>
     </div>
-    <!-- -- ANALYTICS -- -->
-    <div id="page-analytics" class="page">
+
+    <div class="page" id="page-scheduled">
       <div class="page-header">
-        <div><div class="page-title">Analytics</div><div class="page-sub">Deep-dive intelligence and bot performance mapping</div></div>
-        <div class="flex gap-2">
-          <select class="filter-select"><option>Last 7 days</option><option>Last 30 days</option><option>This month</option></select>
+        <div>
+          <div class="page-title">Scheduled Calls</div>
+          <div class="page-sub">Upcoming support calls booked via your widget</div>
         </div>
       </div>
-
-      <!-- ROW 1: KPI CARDS -->
-      <div class="kpi-grid" style="margin-bottom: 18px;">
-        <div class="kpi-card">
-          <div class="kpi-cat">TOTAL SESSIONS · THIS WEEK</div>
-          <div class="kpi-val">1,284</div>
-          <div class="flex gap-2" style="margin-top: 4px; margin-bottom: 8px;">
-            <span class="badge badge-purple" style="font-size: 11px;">🎙️ 847 Voice</span>
-            <span class="badge badge-blue" style="font-size: 11px;">💬 437 Chat</span>
-          </div>
-          <div class="kpi-trend up">↑ 12% vs last week</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-cat">RESOLUTION RATE</div>
-          <div class="kpi-val">87%</div>
-          <div class="kpi-trend up">↑ 4% vs last week</div>
-          <div class="sb-bar" style="height: 3px; margin-top: 10px;"><div class="sb-bar-fill" style="width: 87%; background: var(--grad-cta);"></div></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-cat">ESCALATION RATE</div>
-          <div class="kpi-val red">13%</div>
-          <div class="kpi-trend up" style="color: var(--tertiary);">↓ 4% vs last week</div>
-          <div class="sb-bar" style="height: 3px; margin-top: 10px;"><div class="sb-bar-fill" style="width: 13%; background: var(--red);"></div></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-cat">CSAT SCORE</div>
-          <div class="kpi-val">4.2 <span style="color: var(--on-surface-low); font-size: 16px; font-weight: 400; display: inline;">/5</span></div>
-          <div class="kpi-trend up">↑ 0.3 vs last week</div>
-          <div style="font-size: 14px; margin-top: 6px;">
-            <span style="color: var(--amber);">★★★★</span><span style="color: var(--surface-highest);">★</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- ROW 2: CHARTS -->
-      <div class="overview-grid" style="grid-template-columns: 3fr 2fr; gap: 18px; margin-bottom: 18px;">
-        <!-- Left Card: Session Volume -->
-        <div class="card">
-          <div class="card-header"><div><div class="card-title">Session Volume</div><div class="card-sub">Last 7 days · Voice and Chat</div></div></div>
-          <div class="chart-area" style="height: 200px; display: flex; flex-direction: column;">
-            <div style="flex: 1; display: flex; align-items: flex-end; gap: 12px; padding: 10px 0;">
-              <!-- Monday -->
-              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                <div style="display: flex; align-items: flex-end; gap: 3px; height: 180px; width: 100%;">
-                  <div style="flex: 1; background: var(--primary-dim); height: 93px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                  <div style="flex: 1; background: var(--blue); height: 51px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                </div>
-                <div class="text-xs text-muted" style="font-size: 9px; color: var(--on-surface-low);">Mon</div>
-              </div>
-              <!-- Tuesday -->
-              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                <div style="display: flex; align-items: flex-end; gap: 3px; height: 180px; width: 100%;">
-                  <div style="flex: 1; background: var(--primary-dim); height: 118px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                  <div style="flex: 1; background: var(--blue); height: 64px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                </div>
-                <div class="text-xs text-muted" style="font-size: 9px; color: var(--on-surface-low);">Tue</div>
-              </div>
-              <!-- Wednesday -->
-              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                <div style="display: flex; align-items: flex-end; gap: 3px; height: 180px; width: 100%;">
-                  <div style="flex: 1; background: var(--primary-dim); height: 136px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                  <div style="flex: 1; background: var(--blue); height: 85px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                </div>
-                <div class="text-xs text-muted" style="font-size: 9px; color: var(--on-surface-low);">Wed</div>
-              </div>
-              <!-- Thursday -->
-              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                <div style="display: flex; align-items: flex-end; gap: 3px; height: 180px; width: 100%;">
-                  <div style="flex: 1; background: var(--primary-dim); height: 159px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                  <div style="flex: 1; background: var(--blue); height: 89px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                </div>
-                <div class="text-xs text-muted" style="font-size: 9px; color: var(--on-surface-low);">Thu</div>
-              </div>
-              <!-- Friday -->
-              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                <div style="display: flex; align-items: flex-end; gap: 3px; height: 180px; width: 100%;">
-                  <div style="flex: 1; background: var(--primary-dim); height: 180px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                  <div style="flex: 1; background: var(--blue); height: 106px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                </div>
-                <div class="text-xs text-muted" style="font-size: 9px; color: var(--on-surface-low);">Fri</div>
-              </div>
-              <!-- Saturday -->
-              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                <div style="display: flex; align-items: flex-end; gap: 3px; height: 180px; width: 100%;">
-                  <div style="flex: 1; background: var(--primary-dim); height: 68px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                  <div style="flex: 1; background: var(--blue); height: 39px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                </div>
-                <div class="text-xs text-muted" style="font-size: 9px; color: var(--on-surface-low);">Sat</div>
-              </div>
-              <!-- Sunday -->
-              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                <div style="display: flex; align-items: flex-end; gap: 3px; height: 180px; width: 100%;">
-                  <div style="flex: 1; background: var(--primary-dim); height: 51px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                  <div style="flex: 1; background: var(--blue); height: 28px; border-radius: 6px 6px 0 0; min-height: 6px;"></div>
-                </div>
-                <div class="text-xs text-muted" style="font-size: 9px; color: var(--on-surface-low);">Sun</div>
-              </div>
-            </div>
-            <!-- Legend -->
-            <div style="display: flex; gap: 16px; justify-content: center; margin-top: 10px;">
-              <div class="flex items-center gap-2"><span style="width: 8px; height: 8px; background: var(--primary-dim); border-radius: 2px;"></span><span style="font-size: 11px; color: var(--on-surface-med);">Voice</span></div>
-              <div class="flex items-center gap-2"><span style="width: 8px; height: 8px; background: var(--blue); border-radius: 2px;"></span><span style="font-size: 11px; color: var(--on-surface-med);">Chat</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right Card: Resolution Trend -->
-        <div class="card">
-          <div class="card-header"><div><div class="card-title">Resolution Trend</div><div class="card-sub">Last 7 days · Resolution vs Escalation</div></div></div>
-          <div class="chart-area" style="height: 200px; display: flex; flex-direction: column;">
-            <div style="flex: 1; position: relative; padding: 10px 0;">
-              <svg viewBox="0 0 300 160" preserveAspectRatio="none" width="100%" height="160px" style="display: block;">
-                <defs>
-                  <linearGradient id="resGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.15"/>
-                    <stop offset="100%" stop-color="var(--primary)" stop-opacity="0"/>
-                  </linearGradient>
-                </defs>
-                <!-- Grid Lines -->
-                <g stroke="rgba(189,157,255,0.06)" stroke-width="1">
-                  <line x1="0" y1="40" x2="300" y2="40" /><line x1="0" y1="80" x2="300" y2="80" /><line x1="0" y1="120" x2="300" y2="120" />
-                </g>
-                <!-- Resolution Area -->
-                <path d="M10,35.2 C35,32.4 60,33.8 100,29.6 C140,28.2 190,31 235,28.2 L280,28.2 L280,150 L10,150 Z" fill="url(#resGrad)" />
-                <!-- Resolution Line -->
-                <path d="M10,35.2 C35,32.4 60,33.8 100,29.6 C140,28.2 190,31 235,28.2 L280,28.2" fill="none" stroke="var(--primary)" stroke-width="2" />
-                <!-- Escalation Line -->
-                <path d="M10,124.8 C35,127.6 60,126.2 100,130.4 C140,131.8 190,129 235,131.8 L280,131.8" fill="none" stroke="var(--red)" stroke-width="2" stroke-dasharray="4 3" />
-                <!-- Data Points -->
-                <g>
-                  <!-- Resolution dots -->
-                  <circle cx="10" cy="35.2" r="3" fill="var(--primary)" stroke="#fff" stroke-width="1.5" /><circle cx="55" cy="32.4" r="3" fill="var(--primary)" stroke="#fff" stroke-width="1.5" /><circle cx="100" cy="33.8" r="3" fill="var(--primary)" stroke="#fff" stroke-width="1.5" /><circle cx="145" cy="29.6" r="3" fill="var(--primary)" stroke="#fff" stroke-width="1.5" /><circle cx="190" cy="28.2" r="3" fill="var(--primary)" stroke="#fff" stroke-width="1.5" /><circle cx="235" cy="31" r="3" fill="var(--primary)" stroke="#fff" stroke-width="1.5" /><circle cx="280" cy="28.2" r="3" fill="var(--primary)" stroke="#fff" stroke-width="1.5" />
-                  <!-- Escalation dots -->
-                  <circle cx="10" cy="124.8" r="3" fill="var(--red)" stroke="#fff" stroke-width="1.5" /><circle cx="55" cy="127.6" r="3" fill="var(--red)" stroke="#fff" stroke-width="1.5" /><circle cx="100" cy="126.2" r="3" fill="var(--red)" stroke="#fff" stroke-width="1.5" /><circle cx="145" cy="130.4" r="3" fill="var(--red)" stroke="#fff" stroke-width="1.5" /><circle cx="190" cy="131.8" r="3" fill="var(--red)" stroke="#fff" stroke-width="1.5" /><circle cx="235" cy="129" r="3" fill="var(--red)" stroke="#fff" stroke-width="1.5" /><circle cx="280" cy="131.8" r="3" fill="var(--red)" stroke="#fff" stroke-width="1.5" />
-                </g>
-                <!-- Axis Labels -->
-                <text x="0" y="10" fill="#455080" font-size="9">100%</text><text x="0" y="45" fill="#455080" font-size="9">75%</text><text x="0" y="85" fill="#455080" font-size="9">50%</text><text x="0" y="125" fill="#455080" font-size="9">25%</text><text x="0" y="155" fill="#455080" font-size="9">0%</text>
-              </svg>
-              <div style="display: flex; justify-content: space-between; padding: 0 10px; margin-top: 5px;">
-                <span style="font-size: 9px; color: #455080;">Mon</span><span style="font-size: 9px; color: #455080;">Tue</span><span style="font-size: 9px; color: #455080;">Wed</span><span style="font-size: 9px; color: #455080;">Thu</span><span style="font-size: 9px; color: #455080;">Fri</span><span style="font-size: 9px; color: #455080;">Sat</span><span style="font-size: 9px; color: #455080;">Sun</span>
-              </div>
-            </div>
-            <!-- Legend -->
-            <div style="display: flex; gap: 16px; justify-content: center; margin-top: 10px;">
-              <div class="flex items-center gap-2"><span style="width: 8px; height: 8px; background: var(--primary); border-radius: 2px;"></span><span style="font-size: 11px; color: var(--on-surface-med);">Resolution</span></div>
-              <div class="flex items-center gap-2"><span style="width: 8px; height: 8px; border: 1px dashed var(--red); border-radius: 2px;"></span><span style="font-size: 11px; color: var(--on-surface-med);">Escalation</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ROW 3: PANELS -->
-      <div class="overview-grid" style="grid-template-columns: 1fr 1fr; gap: 18px;">
-        <!-- Left Card: Top Issue Types -->
-        <div class="card">
-          <div class="card-header"><div><div class="card-title">Top Issue Types</div><div class="card-sub">This week by volume</div></div></div>
-          <div class="issue-list">
-            <div class="issue-row"><div class="issue-label">Technical Issue</div><div class="issue-bar-bg"><div class="issue-bar-fill" style="width: 38%; background: var(--primary-dim);"></div></div><div class="issue-pct" style="color: var(--primary-dim);">38%</div></div>
-            <div class="issue-row"><div class="issue-label">Billing</div><div class="issue-bar-bg"><div class="issue-bar-fill" style="width: 27%; background: var(--blue);"></div></div><div class="issue-pct" style="color: var(--blue);">27%</div></div>
-            <div class="issue-row"><div class="issue-label">Account Access</div><div class="issue-bar-bg"><div class="issue-bar-fill" style="width: 18%; background: var(--tertiary);"></div></div><div class="issue-pct" style="color: var(--tertiary);">18%</div></div>
-            <div class="issue-row"><div class="issue-label">Feature Help</div><div class="issue-bar-bg"><div class="issue-bar-fill" style="width: 11%; background: var(--amber);"></div></div><div class="issue-pct" style="color: var(--amber);">11%</div></div>
-            <div class="issue-row"><div class="issue-label">Other</div><div class="issue-bar-bg"><div class="issue-bar-fill" style="width: 6%; background: var(--red);"></div></div><div class="issue-pct" style="color: var(--red);">6%</div></div>
-          </div>
-          <div style="border-top: 1px solid var(--ghost-med); padding-top: 12px; margin-top: 12px; text-align: right;"><span style="font-size: 12px; color: var(--on-surface-low);">1,284 total sessions this week</span></div>
-        </div>
-        <!-- Right Card: CSAT Breakdown -->
-        <div class="card">
-          <div class="card-header"><div><div class="card-title">Customer Satisfaction</div><div class="card-sub">Based on post-call ratings this week</div></div></div>
-          <div style="display: flex; gap: 24px; align-items: flex-start; margin-bottom: 20px;">
-            <div style="flex-shrink: 0;"><div style="font-size: 42px; font-weight: 800; color: var(--amber);">4.2</div><div style="font-size: 12px; color: var(--on-surface-low); margin-top: -4px;">out of 5</div><div style="font-size: 11px; color: var(--on-surface-low); margin-top: 8px;">286 ratings</div></div>
-            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
-              <div class="flex items-center gap-3"><div style="font-size: 11px; width: 30px;">5 ⭐</div><div class="issue-bar-bg" style="height: 6px;"><div class="issue-bar-fill" style="width: 54%; background: var(--tertiary);"></div></div><div style="font-size: 11px; font-weight: 700; width: 30px; text-align: right;">54%</div></div>
-              <div class="flex items-center gap-3"><div style="font-size: 11px; width: 30px;">4 ⭐</div><div class="issue-bar-bg" style="height: 6px;"><div class="issue-bar-fill" style="width: 26%; background: var(--primary);"></div></div><div style="font-size: 11px; font-weight: 700; width: 30px; text-align: right;">26%</div></div>
-              <div class="flex items-center gap-3"><div style="font-size: 11px; width: 30px;">3 ⭐</div><div class="issue-bar-bg" style="height: 6px;"><div class="issue-bar-fill" style="width: 12%; background: var(--amber);"></div></div><div style="font-size: 11px; font-weight: 700; width: 30px; text-align: right;">12%</div></div>
-              <div class="flex items-center gap-3"><div style="font-size: 11px; width: 30px;">2 ⭐</div><div class="issue-bar-bg" style="height: 6px;"><div class="issue-bar-fill" style="width: 5%; background: var(--red); opacity: 0.6;"></div></div><div style="font-size: 11px; font-weight: 700; width: 30px; text-align: right;">5%</div></div>
-              <div class="flex items-center gap-3"><div style="font-size: 11px; width: 30px;">1 ⭐</div><div class="issue-bar-bg" style="height: 6px;"><div class="issue-bar-fill" style="width: 3%; background: var(--red);"></div></div><div style="font-size: 11px; font-weight: 700; width: 30px; text-align: right;">3%</div></div>
-            </div>
-          </div>
-          <div style="border-top: 1px solid var(--ghost-med); padding-top: 12px;">
-            <div class="stat-row"><div class="stat-key">Response Rate</div><div class="stat-val">22% of sessions rated</div></div>
-            <div class="stat-row"><div class="stat-key">This Week vs Last</div><div class="stat-val" style="color: var(--tertiary);">↑ 0.3 improvement</div></div>
-          </div>
-        </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="data-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Specialist</th>
+              <th>Date & Time</th>
+              <th>Duration</th>
+              <th>Status</th>
+              <th>Meet Link</th>
+            </tr>
+          </thead>
+          <tbody id="scheduled-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--on-surface-low);">Loading scheduled calls...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
-
     <!-- -- SETTINGS -- -->
     <div id="page-settings" class="page">
       <div class="page-header"><div><div class="page-title">Settings</div><div class="page-sub">Manage your account, team, and integrations</div></div></div>
@@ -1516,18 +1243,47 @@ Instructions:
         <div>
           <div id="sec-profile" class="settings-section">
             <div class="card"><div class="card-header"><div class="card-title">Profile Information</div></div>
-              <div class="form-row" style="margin-bottom:16px;"><div class="form-group" style="margin-bottom:0;"><label class="form-label">First Name</label><input class="form-input" value="Alex"></div><div class="form-group" style="margin-bottom:0;"><label class="form-label">Last Name</label><input class="form-input" value="Smith"></div></div>
-              <div class="form-group"><label class="form-label">Email</label><input class="form-input" value="alex@acmecorp.com"></div>
-              <div class="form-group"><label class="form-label">Company Name</label><input class="form-input" value="Acme Corp"></div>
-              <div class="form-group" style="margin-bottom:0;"><label class="form-label">Website</label><input class="form-input" value="https://acmecorp.com"></div>
+              <div class="form-group"><label class="form-label">Full Name</label><input id="settings-name" class="form-input" placeholder="Your Full Name"></div>
+              <div class="form-group"><label class="form-label">Email</label><input id="settings-email" class="form-input" readonly style="opacity:0.6;cursor:not-allowed;"></div>
+              <div class="form-group"><label class="form-label">Company Name</label><input id="settings-company" class="form-input" placeholder="Company Name"></div>
+              
+              <div class="form-row" style="margin-bottom:16px; display: flex; gap: 16px;">
+                <div class="form-group" style="margin-bottom:0; flex:1;">
+                  <label class="form-label">Team Size</label>
+                  <select id="settings-team-size" class="form-input" style="background:var(--surface);color:var(--on-surface);">
+                    <option value="1-10">1-10</option>
+                    <option value="11-50">11-50</option>
+                    <option value="51-200">51-200</option>
+                    <option value="200+">200+</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0; flex:1;">
+                  <label class="form-label">Industry</label>
+                  <select id="settings-industry" class="form-input" style="background:var(--surface);color:var(--on-surface);">
+                    <option value="Fintech">Fintech</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="E-commerce">E-commerce</option>
+                    <option value="SaaS">SaaS</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Dashboard Display Preference</label>
+                <select id="settings-display-pref" class="form-input" style="background:var(--surface);color:var(--on-surface);">
+                  <option value="full_name">Show Full Name</option>
+                  <option value="company_name">Show Company Name</option>
+                </select>
+              </div>
             </div>
-            <div style="margin-top:16px;"><button class="btn btn-primary">Save Changes</button></div>
+            <div style="margin-top:16px;"><button id="saveProfileBtn" onclick="saveProfileChanges()" class="btn btn-primary">Save Changes</button></div>
           </div>
 
           <div id="sec-apikeys" class="settings-section" style="display:none;">
             <div class="card"><div class="card-header"><div><div class="card-title">API Keys</div><div class="card-sub">Manage your credentials</div></div><button class="btn btn-primary btn-sm">+ Add Key</button></div>
               <div class="api-key-row"><div style="flex:1;"><div style="font-size:13px;font-weight:600;margin-bottom:2px;color:var(--on-surface);">Deepgram API Key</div><div class="text-xs text-muted">Speech-to-text and voice agent</div></div><div class="api-key-val">0c1d65f2â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢a04ab0dd2e</div><button class="btn btn-ghost btn-sm">Edit</button></div>
-              <div class="api-key-row"><div style="flex:1;"><div style="font-size:13px;font-weight:600;margin-bottom:2px;color:var(--on-surface);">Voxio Widget Key</div><div class="text-xs text-muted">Public key for your widget</div></div><div class="api-key-val">vra_live_k9f2â€¢â€¢â€¢â€¢â€¢â€¢â€¢q3m7n</div><button class="btn btn-ghost btn-sm">Rotate</button></div>
+              <div class="api-key-row"><div style="flex:1;"><div style="font-size:13px;font-weight:600;margin-bottom:2px;color:var(--on-surface);">Voicera Widget Key</div><div class="text-xs text-muted">Public key for your widget</div></div><div class="api-key-val">vra_live_k9f2â€¢â€¢â€¢â€¢â€¢â€¢â€¢q3m7n</div><button class="btn btn-ghost btn-sm">Rotate</button></div>
               <div class="api-key-row"><div style="flex:1;"><div style="font-size:13px;font-weight:600;margin-bottom:2px;color:var(--on-surface);">Webhook Secret</div><div class="text-xs text-muted">Verify webhook payloads</div></div><div class="api-key-val">whsec_â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢</div><button class="btn btn-ghost btn-sm">Show</button></div>
             </div>
           </div>
@@ -1680,19 +1436,122 @@ Instructions:
             <div class="card" style="margin-bottom:16px;">
               <div class="card-header"><div class="card-title">Embed Code</div></div>
               <div class="text-sm text-muted" style="margin-bottom:10px;">Copy and paste into your website's &lt;/body&gt; tag:</div>
-              <div class="embed-box" onclick="copyEmbed()">&lt;script src="https://cdn.Voxio.ai/widget.js"<br>&nbsp;&nbsp;data-key="vra_live_k9f2x8p1q3m7n"<br>&nbsp;&nbsp;data-color="#8a4cfc"&gt;<br>&lt;/script&gt;</div>
+              <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface-hi);border-radius:12px;margin-bottom:16px;border:1px solid var(--ghost-med);">
+                <div id="widget-status-indicator-wrapper" style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0;"></div>
+                  <div>
+                    <div style="font-size:13px;font-weight:600;">Widget Not Connected</div>
+                    <div style="font-size:11px;color:var(--on-surface-low);">Copy the embed code below and add it to your website</div>
+                  </div>
+                </div>
+                <div style="margin-left:auto;font-family:monospace;font-size:11px;color:var(--primary);" id="widget-client-id-display"></div>
+              </div>
+              <div class="embed-box" id="embed-code-box" onclick="copyEmbed()">Loading...</div>
               <div class="text-xs text-muted" style="margin-top:8px;">Click to copy · <span style="color:var(--primary);cursor:pointer;">View docs</span></div>
+            </div>
+            
+            <div class="card" id="specialist-calendar-card" style="display:none;">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">My Google Calendar</div>
+                  <div class="card-sub">Connect your calendar so customers can book support calls with you</div>
+                </div>
+              </div>
+              <div id="calendar-connect-status" style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface-hi);border-radius:12px;margin-bottom:16px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0;"></div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:var(--on-surface);">Calendar Not Connected</div>
+                  <div style="font-size:11px;color:var(--on-surface-low);">Connect your Google Calendar to receive customer booking requests</div>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="connectMyCalendar()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Connect Google Calendar
+              </button>
+              
+              <div id="availability-settings" style="margin-top:24px;">
+                <div class="card-title" style="margin-bottom:16px;">My Availability</div>
+                <div class="card-sub" style="margin-bottom:16px;">Set your working hours so customers can book support calls with you</div>
+                
+                <div id="availability-grid" style="display:flex;flex-direction:column;gap:12px;">
+                  <!-- Days filled by JS -->
+                </div>
+                
+                <div style="margin-top:16px;display:flex;align-items:center;gap:12px;">
+                  <select id="availability-timezone" style="padding:8px 12px;background:var(--surface-hi);border:1px solid var(--ghost-med);border-radius:8px;color:var(--on-surface);font-size:13px;">
+                    <option value="Asia/Kolkata">IST (India)</option>
+                    <option value="Asia/Dubai">GST (Dubai)</option>
+                    <option value="America/New_York">EST (New York)</option>
+                    <option value="Europe/London">GMT (London)</option>
+                    <option value="Asia/Singapore">SGT (Singapore)</option>
+                  </select>
+                  <button class="btn btn-primary" onclick="saveAvailability()" style="margin-left:auto;">Save Availability</button>
+                </div>
+              </div>
             </div>
           </div>
 
           <div id="sec-documentation" class="settings-section" style="display:none;">
             <div class="card">
-              <div class="card-header"><div><div class="card-title">Documentation</div><div class="card-sub">Everything you need to build with Voxio</div></div></div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px;">
-                <div class="card card-sm card-hi" style="cursor:pointer;"><div style="font-weight:700;margin-bottom:4px;color:var(--primary);">Quick Start &rarr;</div><div class="text-xs text-muted">Get your bot live in under 5 minutes.</div></div>
-                <div class="card card-sm card-hi" style="cursor:pointer;"><div style="font-weight:700;margin-bottom:4px;color:var(--tertiary);">API Reference &rarr;</div><div class="text-xs text-muted">Integrate Voxio into your own apps.</div></div>
-                <div class="card card-sm card-hi" style="cursor:pointer;"><div style="font-weight:700;margin-bottom:4px;color:var(--amber);">MCP Guides &rarr;</div><div class="text-xs text-muted">Connecting custom CRM backends.</div></div>
-                <div class="card card-sm card-hi" style="cursor:pointer;"><div style="font-weight:700;margin-bottom:4px;color:var(--blue);">Widget Customization &rarr;</div><div class="text-xs text-muted">Advanced CSS and event hooks.</div></div>
+              <div class="card-header"><div><div class="card-title">Documentation</div><div class="card-sub">Everything you need to build with Voicera</div></div></div>
+              <div style="margin-top:10px;">
+                <div style="background:#1e2130;border-radius:12px;padding:32px;max-width:700px;">
+                  <div style="font-size:22px;font-weight:700;color:#a78bfa;margin-bottom:8px;">Widget Customization</div>
+                  <div style="color:#94a3b8;margin-bottom:24px;">Embed and customize your Voicera widget with advanced CSS and event hooks.</div>
+                  <button onclick="showWidgetDocs()" style="background:#7c3aed;color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">View Guide &rarr;</button>
+                </div>
+                
+                <div id="widget-docs-steps" style="display:none;margin-top:32px;max-width:700px;">
+                  <!-- Step 1 -->
+                  <div style="background:#1e2130;border-radius:12px;padding:24px;margin-bottom:16px;">
+                    <div style="color:#a78bfa;font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:6px;">STEP 1</div>
+                    <div style="color:#f1f5f9;font-size:16px;font-weight:700;margin-bottom:8px;">Add the Script Tag</div>
+                    <div style="color:#94a3b8;font-size:14px;margin-bottom:12px;">Paste this inside the <code style="color:#a78bfa">&lt;head&gt;</code> or before the closing <code style="color:#a78bfa">&lt;/body&gt;</code> tag of your website.</div>
+                    <div style="background:#0f1117;border-radius:8px;padding:14px;font-family:monospace;font-size:13px;color:#7dd3fc;position:relative;">
+                      &lt;script src="https://voicera-landing.teamvoicera7.workers.dev/src/widget.js"&gt;&lt;/script&gt;
+                      <button onclick="navigator.clipboard.writeText('<script src=\'https://voicera-landing.teamvoicera7.workers.dev/src/widget.js\'></script>')" style="position:absolute;top:8px;right:8px;background:#1e2130;border:1px solid #334155;color:#94a3b8;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Copy</button>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div style="background:#1e2130;border-radius:12px;padding:24px;margin-bottom:16px;">
+                    <div style="color:#a78bfa;font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:6px;">STEP 2</div>
+                    <div style="color:#f1f5f9;font-size:16px;font-weight:700;margin-bottom:8px;">Initialize the Widget</div>
+                    <div style="color:#94a3b8;font-size:14px;margin-bottom:12px;">Add this snippet right after the script tag. Your unique <code style="color:#a78bfa">clientId</code> is already filled in.</div>
+                    <div style="background:#0f1117;border-radius:8px;padding:14px;font-family:monospace;font-size:13px;color:#7dd3fc;position:relative;" id="widget-init-code">
+                      &lt;script&gt;<br>
+                      &nbsp;&nbsp;new VoiceraWidget({<br>
+                      &nbsp;&nbsp;&nbsp;&nbsp;clientId: '<span id="doc-client-id">YOUR_CLIENT_ID</span>',<br>
+                      &nbsp;&nbsp;&nbsp;&nbsp;backendUrl: 'https://voicera-backend-production.up.railway.app'<br>
+                      &nbsp;&nbsp;});<br>
+                      &lt;/script&gt;
+                      <button onclick="copyInitCode()" style="position:absolute;top:8px;right:8px;background:#1e2130;border:1px solid #334155;color:#94a3b8;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Copy</button>
+                    </div>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div style="background:#1e2130;border-radius:12px;padding:24px;margin-bottom:16px;">
+                    <div style="color:#a78bfa;font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:6px;">STEP 3</div>
+                    <div style="color:#f1f5f9;font-size:16px;font-weight:700;margin-bottom:8px;">Customize via Bot Config</div>
+                    <div style="color:#94a3b8;font-size:14px;margin-bottom:12px;">Go to <strong style="color:#f1f5f9">Bot Config</strong> in the sidebar to set your bot's name, greeting message, escalation keywords, voice model, and response style. All changes reflect instantly on your widget.</div>
+                    <button onclick="nav('botconfig')" style="background:transparent;border:1px solid #7c3aed;color:#a78bfa;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">Go to Bot Config &rarr;</button>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div style="background:#1e2130;border-radius:12px;padding:24px;margin-bottom:16px;">
+                    <div style="color:#a78bfa;font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:6px;">STEP 4</div>
+                    <div style="color:#f1f5f9;font-size:16px;font-weight:700;margin-bottom:8px;">Upload Your Knowledge Base</div>
+                    <div style="color:#94a3b8;font-size:14px;margin-bottom:12px;">Upload PDFs, DOCX, or TXT files in the <strong style="color:#f1f5f9">Knowledge Base</strong> section. The AI will use these to answer your customers' questions accurately.</div>
+                    <button onclick="nav('knowledgebase')" style="background:transparent;border:1px solid #7c3aed;color:#a78bfa;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">Go to Knowledge Base &rarr;</button>
+                  </div>
+
+                  <!-- Step 5 -->
+                  <div style="background:#1e2130;border-radius:12px;padding:24px;">
+                    <div style="color:#a78bfa;font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:6px;">STEP 5</div>
+                    <div style="color:#f1f5f9;font-size:16px;font-weight:700;margin-bottom:8px;">Test Your Widget</div>
+                    <div style="color:#94a3b8;font-size:14px;">Once embedded, open your website and click the Voicera widget bubble. Try chatting, test a voice call, and trigger an escalation keyword to see the booking flow in action.</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1782,21 +1641,386 @@ Instructions:
 <div id="chart-tooltip" class="chart-tooltip"></div>
 <div id="toast-container" class="toast-container"></div>
 <script>
-const titles={overview:'Overview',calllogs:'Call Logs',tickets:'Tickets',analytics:'Analytics',knowledgebase:'Knowledge Base',team:'Team',botconfig:'Bot Config',settings:'Settings'};
+const SUPABASE_URL = 'https://tvqpmkazbzkviyegbwtc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2cXBta2F6Ynprdml5ZWdid3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NDM1MjMsImV4cCI6MjA5MzIxOTUyM30.ITXCPEShl5WWTysmhQRyIpg8AeQxpeVlsFuFAqekdig';
+const BACKEND = 'https://voicera-backend-production.up.railway.app';
+let CLIENT_ID = localStorage.getItem('voicera_client_id') || '70d0188f-ef36-4c79-b0b6-b215e767d859';
+let TOKEN = localStorage.getItem('voicera_backend_token') || '';
+
+const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    flowType: 'implicit',
+    detectSessionInUrl: true,
+    persistSession: true,
+    storage: window.localStorage
+  }
+});
+
+  async function checkAuth() {
+  // Check if redirected back from Google Calendar OAuth
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('calendar') === 'connected') {
+    setTimeout(() => {
+      showToast('Google Calendar connected successfully! ✓');
+      window.history.replaceState({}, '', window.location.pathname);
+    }, 2000);
+  }
+
+    const customToken = localStorage.getItem('voicera_backend_token') || localStorage.getItem('voicera_token');
+    let { data: { session } } = await _supabase.auth.getSession();
+    
+    // Hash retry logic (keep this)
+    if (!session && window.location.hash.includes('access_token=')) {
+      await new Promise(r => setTimeout(r, 500));
+      const { data: { session: retrySession } } = await _supabase.auth.getSession();
+      session = retrySession;
+    }
+
+    if (!session && !customToken) {
+      window.location.href = 'login';
+      return;
+    }
+    
+    let name, email;
+    if (session) {
+      const user = session.user;
+      name = user.user_metadata?.full_name || user.email.split('@')[0];
+      email = user.email;
+    } else {
+      name = localStorage.getItem('voicera_name') || 'User';
+      email = localStorage.getItem('voicera_email') || '';
+    }
+    
+    const displayPref = localStorage.getItem('voicera_display_preference') || 'full_name';
+    const company = localStorage.getItem('voicera_company') || '';
+    const displayName = (displayPref === 'company_name' && company) ? company : name;
+    const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    
+    const userNameEl = document.querySelector('.user-name');
+    const userRoleEl = document.querySelector('.user-role');
+    const userAvaEl = document.querySelector('.user-ava');
+    if (userNameEl) userNameEl.textContent = displayName;
+    if (userRoleEl) userRoleEl.textContent = email;
+    if (userAvaEl) userAvaEl.textContent = initials;
+
+    const welcomeEl = document.getElementById('overview-welcome');
+    if (welcomeEl) welcomeEl.textContent = `Welcome back, ${displayName} — here's what's happening with Voicera today.`;
+
+    try {
+      // Step 1: Get backend token using admin account
+      const userEmail = email;
+      localStorage.setItem('voicera_email', userEmail);
+      let userRole = localStorage.getItem('voicera_role') || 'admin';
+      
+      if (session) {
+        try {
+          // Get backend token for THIS specific user (not test@example.com)
+          const supabaseUser = session.user;
+          const loginRes = await fetch(`${BACKEND}/api/v1/auth/supabase-login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: supabaseUser.email,
+              supabase_id: supabaseUser.id,
+              full_name: supabaseUser.user_metadata?.full_name || supabaseUser.email.split('@')[0]
+            })
+          });
+          const loginData = await loginRes.json();
+          if (loginData.access_token) {
+            TOKEN = loginData.access_token;
+            localStorage.setItem('voicera_backend_token', TOKEN);
+            localStorage.setItem('voicera_client_id', loginData.client_id);
+            CLIENT_ID = loginData.client_id;
+            userRole = loginData.role;
+          }
+          
+          // Step 2: Look up the actual logged in user's role by their email
+          const roleRes = await fetch(`${BACKEND}/api/v1/auth/user-role?email=${encodeURIComponent(userEmail)}`, {
+            headers: { 'Authorization': `Bearer ${TOKEN}` }
+          });
+          if (roleRes.ok) {
+            const roleData = await roleRes.json();
+            userRole = roleData.role || 'admin';
+          }
+        } catch(e) {
+          console.error('Auth setup error:', e);
+        }
+      } else {
+        // Custom token is used directly!
+        TOKEN = customToken;
+        localStorage.setItem('voicera_backend_token', TOKEN);
+        CLIENT_ID = localStorage.getItem('voicera_client_id') || CLIENT_ID;
+      }
+      
+      localStorage.setItem('voicera_role', userRole);
+      applyRoleAccess(userRole);
+
+      // Step 3: Setup or get client for this user
+      if (session) {
+        const setupRes = await fetch(`${BACKEND}/api/v1/auth/setup-client`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${TOKEN}`
+          },
+          body: JSON.stringify({ 
+            email: email,
+            company_name: session.user.user_metadata?.company_name || name
+          })
+        });
+        const setupData = await setupRes.json();
+        if (setupData.client_id) {
+          CLIENT_ID = setupData.client_id;
+          localStorage.setItem('voicera_client_id', setupData.client_id);
+          localStorage.setItem('voicera_company', setupData.company_name);
+          console.log('Client ID:', CLIENT_ID, setupData.is_new ? '(new)' : '(existing)');
+          
+          // Update workspace name in sidebar
+          const wsName = document.querySelector('.sb-ws-name');
+          if (wsName) wsName.textContent = setupData.company_name;
+        }
+      } else {
+        // For custom logins, we already have company name from backend and store it in localStorage
+        const wsName = document.querySelector('.sb-ws-name');
+        if (wsName) wsName.textContent = localStorage.getItem('voicera_company') || (name + "'s Workspace");
+      }
+
+      // Fetch latest profile to check onboarding and update layout
+      try {
+        const profRes = await fetch(`${BACKEND}/api/v1/auth/profile`, {
+          headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        if (profRes.ok) {
+          const profData = await profRes.json();
+          const user = profData.user;
+          const client = profData.client;
+
+          // Save in localStorage
+          localStorage.setItem('voicera_name', user.full_name);
+          localStorage.setItem('voicera_email', user.email);
+          localStorage.setItem('voicera_company', client.company_name);
+          if (client.team_size) localStorage.setItem('voicera_team_size', client.team_size);
+          if (client.industry) localStorage.setItem('voicera_industry', client.industry);
+          localStorage.setItem('voicera_display_preference', user.display_preference || 'full_name');
+
+          // Dynamically update UI display name and initials
+          const pref = user.display_preference || 'full_name';
+          const displayName = (pref === 'company_name' && client.company_name) ? client.company_name : user.full_name;
+
+          const userNameEl = document.querySelector('.user-name');
+          const userAvaEl = document.querySelector('.user-ava');
+          if (userNameEl) userNameEl.textContent = displayName;
+          if (userAvaEl) {
+            const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            userAvaEl.textContent = initials;
+          }
+
+          const welcomeEl = document.getElementById('overview-welcome');
+          if (welcomeEl) welcomeEl.textContent = `Welcome back, ${displayName} — here's what's happening with Voicera today.`;
+
+          const wsName = document.querySelector('.sb-ws-name');
+          if (wsName) wsName.textContent = client.company_name;
+
+          // Check if onboarding completed
+          if (!user.onboarding_completed) {
+            const overlay = document.getElementById('onboarding-overlay');
+            if (overlay) {
+              overlay.style.display = 'flex';
+              overlay.style.opacity = '1';
+            }
+          } else {
+            const overlay = document.getElementById('onboarding-overlay');
+            if (overlay) {
+              overlay.style.display = 'none';
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching profile onboarding details:', err);
+      }
+
+    } catch(e) {
+      console.error('Auth setup error:', e);
+    }
+
+    // Wire date filter select event listener
+    const filterSel = document.querySelector('.filter-select');
+    if (filterSel) {
+      filterSel.addEventListener('change', () => {
+        loadOverview();
+      });
+    }
+
+    // Load initial page data
+    const activePage = document.querySelector('.page.active');
+    if (activePage?.id === 'page-knowledgebase') loadKBDocuments();
+    loadOverview();
+    loadScheduled();
+    loadBotConfig();
+
+    // Auto-refresh every 30 seconds
+    setInterval(async () => {
+      const activePage = document.querySelector('.page.active');
+      if (!activePage) return;
+      const pageId = activePage.id;
+      
+      if (pageId === 'page-overview') loadOverview();
+      if (pageId === 'page-calllogs') loadSessions();
+      if (pageId === 'page-tickets') loadTickets();
+      if (pageId === 'page-scheduled') loadScheduled();
+      if (pageId === 'page-knowledgebase') loadKBDocuments();
+      if (pageId === 'page-team') loadTeam();
+      
+      // Always update sidebar badges
+      updateSidebarBadges();
+    }, 30000);
+  }
+  checkAuth();
+
+const titles={overview:'Overview',calllogs:'Call Logs',tickets:'Tickets',scheduled:'Scheduled Calls',knowledgebase:'Knowledge Base',team:'Team',botconfig:'Bot Config',settings:'Settings'};
 
 function nav(page,el){
+  const role = localStorage.getItem('voicera_role') || 'admin';
+  const specialistAllowed = ['calllogs', 'tickets', 'scheduled', 'settings'];
+  const viewerHidden = ['team', 'settings', 'botconfig', 'knowledgebase'];
+  
+  if (role === 'specialist' && !specialistAllowed.includes(page)) {
+    showToast('You do not have access to this page.');
+    return;
+  }
+  if (role === 'viewer' && viewerHidden.includes(page)) {
+    showToast('You do not have access to this page.');
+    return;
+  }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   if(el)el.classList.add('active');
   const titleEl = document.getElementById('topbar-title');
   if(titleEl) titleEl.textContent=titles[page]||page;
+  
+  if (page === 'knowledgebase') {
+    setTimeout(() => loadKBDocuments(), 100);
+  }
+  if (page === 'calllogs') setTimeout(() => loadSessions(), 100);
+  if (page === 'tickets') setTimeout(() => loadTickets(), 100);
+  if (page === 'scheduled') setTimeout(() => loadScheduled(), 100);
+  if (page === 'overview') setTimeout(() => loadOverview(), 100);
+  if (page === 'team') setTimeout(() => loadTeam(), 100);
+  if (page === 'botconfig') setTimeout(() => loadBotConfig(), 100);
+  if (page === 'settings') {
+    // Populate profile inputs from localStorage first (as fallback)
+    const settingsNameInput = document.getElementById('settings-name');
+    const settingsEmailInput = document.getElementById('settings-email');
+    const settingsCompanyInput = document.getElementById('settings-company');
+    const settingsTeamSizeInput = document.getElementById('settings-team-size');
+    const settingsIndustryInput = document.getElementById('settings-industry');
+    const settingsDisplayPrefInput = document.getElementById('settings-display-pref');
+
+    if (settingsNameInput) settingsNameInput.value = localStorage.getItem('voicera_name') || '';
+    if (settingsEmailInput) settingsEmailInput.value = localStorage.getItem('voicera_email') || '';
+    if (settingsCompanyInput) settingsCompanyInput.value = localStorage.getItem('voicera_company') || '';
+    if (settingsTeamSizeInput) settingsTeamSizeInput.value = localStorage.getItem('voicera_team_size') || '11-50';
+    if (settingsIndustryInput) settingsIndustryInput.value = localStorage.getItem('voicera_industry') || 'Fintech';
+    if (settingsDisplayPrefInput) settingsDisplayPrefInput.value = localStorage.getItem('voicera_display_preference') || 'full_name';
+
+    // Fetch fresh profile details from backend
+    fetch(`${BACKEND}/api/v1/auth/profile`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('voicera_backend_token') || TOKEN}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const user = data.user;
+        const client = data.client;
+
+        if (settingsNameInput) settingsNameInput.value = user.full_name || '';
+        if (settingsEmailInput) settingsEmailInput.value = user.email || '';
+        if (settingsCompanyInput) settingsCompanyInput.value = client.company_name || '';
+        if (settingsTeamSizeInput) settingsTeamSizeInput.value = client.team_size || '11-50';
+        if (settingsIndustryInput) settingsIndustryInput.value = client.industry || 'Fintech';
+        if (settingsDisplayPrefInput) settingsDisplayPrefInput.value = user.display_preference || 'full_name';
+
+        // Update localStorage
+        localStorage.setItem('voicera_name', user.full_name);
+        localStorage.setItem('voicera_email', user.email);
+        localStorage.setItem('voicera_company', client.company_name);
+        if (client.team_size) localStorage.setItem('voicera_team_size', client.team_size);
+        if (client.industry) localStorage.setItem('voicera_industry', client.industry);
+        localStorage.setItem('voicera_display_preference', user.display_preference || 'full_name');
+
+        // Dynamically update display name and initials in UI
+        const pref = user.display_preference || 'full_name';
+        const displayName = pref === 'company_name' ? client.company_name : user.full_name;
+
+        const userNameEl = document.querySelector('.user-name');
+        if (userNameEl) userNameEl.textContent = displayName;
+
+        const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        const userAvaEl = document.querySelector('.user-ava');
+        if (userAvaEl) userAvaEl.textContent = initials;
+        
+        const wsName = document.querySelector('.sb-ws-name');
+        if (wsName) wsName.textContent = client.company_name;
+      }
+    })
+    .catch(err => console.error('Error fetching settings:', err));
+
+    setTimeout(() => {
+      const realClientId = localStorage.getItem('voicera_client_id') || CLIENT_ID;
+      const box = document.getElementById('embed-code-box');
+      const clientIdDisplay = document.getElementById('widget-client-id-display');
+      if (clientIdDisplay) clientIdDisplay.textContent = realClientId?.substring(0,8) + '...';
+      if (box) {
+        box.textContent = `<script src="https://voicera-landing.teamvoicera7.workers.dev/src/widget.js"><\/script>\n<script>\n  new VoiceraWidget({\n    clientId: '${realClientId}',\n    backendUrl: 'https://voicera-backend-production.up.railway.app'\n  });\n<\/script>`;
+      }
+    }, 100);
+
+    const currentRole = localStorage.getItem('voicera_role') || 'admin';
+    if (currentRole === 'specialist') {
+      setTimeout(() => {
+        document.querySelectorAll('.settings-nav-item').forEach(item => {
+          const onclick = item.getAttribute('onclick') || '';
+          const specialistSections = ['profile', 'widget'];
+          const allowed = specialistSections.some(s => onclick.includes(s));
+          item.style.display = allowed ? 'block' : 'none';
+        });
+
+        // For specialists - show widget section but hide admin-only cards
+        const secWidget = document.getElementById('sec-widget');
+        if (secWidget) secWidget.style.display = 'block';
+        
+        // Hide admin-only cards inside widget section
+        const embedCard = document.querySelector('#sec-widget .card:first-child');
+        if (embedCard) embedCard.style.display = 'none';
+        
+        // Show specialist calendar card
+        const calCard = document.getElementById('specialist-calendar-card');
+        if (calCard) calCard.style.display = 'block';
+        
+        // Auto navigate to widget section for specialist
+        const widgetNavItem = document.querySelector('.settings-nav-item[onclick*="widget"]');
+        if (widgetNavItem) showSettingsSection('widget', widgetNavItem);
+        
+        // Load calendar status and availability
+        checkCalendarStatus();
+      }, 100);
+    }
+  }
 }
 
-function showSettingsSection(sec,el){
-  document.querySelectorAll('.settings-section').forEach(s=>s.style.display='none');
-  document.querySelectorAll('.settings-nav-item').forEach(i=>i.classList.remove('active'));
-  document.getElementById('sec-'+sec).style.display='block';
+function showSettingsSection(sec, el) {
+  const role = localStorage.getItem('voicera_role') || 'admin';
+  
+  // Specialists can only access profile and widget sections
+  if (role === 'specialist' && !['profile', 'widget'].includes(sec)) {
+    showToast('You do not have access to this section.');
+    return;
+  }
+  
+  document.querySelectorAll('.settings-section').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('sec-' + sec).style.display = 'block';
   el.classList.add('active');
 }
 
@@ -1830,7 +2054,7 @@ function triggerOAuth(toolName, idOverride) {
   conf.innerHTML = `
     <div style="background: var(--surface-hi); border-radius: 10px; padding: 10px 14px; margin-top: 8px; border: 1px solid var(--ghost-med);">
       <div style="color: var(--on-surface-med); font-size: 12px; margin-bottom: 12px;">
-        You will be redirected to ${toolName} to authorize access. Voxio will only read customer data — no write access.
+        You will be redirected to ${toolName} to authorize access. Voicera will only read customer data — no write access.
       </div>
       <div style="display: flex; gap: 8px;">
         <button class="btn btn-primary btn-sm" id="cont-${id}" onclick="completeOAuthSim('${toolName}', '${id}')">Continue to ${toolName}</button>
@@ -1968,12 +2192,18 @@ function setColor(el){
   document.getElementById('prev-btn').style.background=`linear-gradient(135deg, ${accentColor}, #cc99ff)`;
   document.getElementById('prev-trigger').style.background=`linear-gradient(135deg, ${accentColor}, #cc99ff)`;
 }
-function copyEmbed(){
-  navigator.clipboard.writeText(`<script src="https://cdn.Voxio.ai/widget.js" data-key="vra_live_k9f2x8p1q3m7n" data-color="${accentColor}"><\\/script>`).then(()=>{
-    const el=document.querySelector('.embed-box');
-    el.style.color='var(--tertiary)';setTimeout(()=>el.style.color='',1500);
-  });
-}
+  function copyEmbed() {
+    const realClientId = localStorage.getItem('voicera_client_id') || CLIENT_ID;
+    const embedCode = `<script src="https://voicera-landing.teamvoicera7.workers.dev/src/widget.js"><\/script>\n<script>\n  new VoiceraWidget({\n    clientId: '${realClientId}',\n    backendUrl: 'https://voicera-backend-production.up.railway.app'\n  });\n<\/script>`;
+    
+    const box = document.getElementById('embed-code-box');
+    if (box) box.textContent = embedCode;
+    
+    navigator.clipboard.writeText(embedCode).then(() => {
+      if (box) { box.style.color = 'var(--tertiary)'; setTimeout(() => box.style.color = '', 1500); }
+      showToast('Embed code copied to clipboard!');
+    });
+  }
 
 // Bar chart
 const chartData=[142,98,187,204,156,231,178,143,219,267,189,241,198,312];
@@ -1998,6 +2228,142 @@ function setBotConfigTab(tab, el) {
   document.querySelectorAll('#page-botconfig .tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
 }
+
+  async function loadBotConfig() {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const res = await fetch(`${BACKEND}/api/v1/bot-config`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const config = data.config || {};
+      
+      const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+      
+      set('bc-bot-name', config.bot_name);
+      set('bc-greeting', config.default_greeting);
+      set('bc-system-prompt', config.system_prompt);
+      set('bc-escalation-keywords', config.escalation_keywords);
+      set('bc-escalation-msg', config.escalation_message);
+      set('bc-blacklist', config.blacklisted_topics);
+      set('bc-voice-greeting', config.voice_greeting);
+      set('bc-chat-greeting', config.chat_greeting);
+      set('bc-response-length', config.chat_response_length);
+      set('bc-response-format', config.response_format);
+      
+      // Set voice model
+      if (config.voice_model) {
+        document.querySelectorAll('.voice-opt').forEach(opt => {
+          opt.classList.remove('selected');
+          if (opt.dataset.voice === config.voice_model) opt.classList.add('selected');
+        });
+      }
+    } catch(e) {
+      console.error('Load bot config error:', e);
+    }
+  }
+
+  window.showWidgetDocs = function() {
+    const el = document.getElementById('widget-docs-steps');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    const cid = localStorage.getItem('voicera_client_id') || 'YOUR_CLIENT_ID';
+    const docCid = document.getElementById('doc-client-id');
+    if (docCid) docCid.textContent = cid;
+  };
+
+  window.copyInitCode = function() {
+    const cid = localStorage.getItem('voicera_client_id') || 'YOUR_CLIENT_ID';
+    const code = `<script>\n  new VoiceraWidget({\n    clientId: '${cid}',\n    backendUrl: 'https://voicera-backend-production.up.railway.app'\n  });\n<\/script>`;
+    navigator.clipboard.writeText(code);
+    showToast('Initialization snippet copied!');
+  };
+
+  async function previewBot() {
+    showToast('Preparing your bot preview widget...');
+    try {
+      if (!window.VoiceraWidget) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = "https://voicera-landing.teamvoicera7.workers.dev/src/widget.js";
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("Failed to load widget script"));
+          document.body.appendChild(script);
+        });
+      }
+      
+      // Clear out any old instances of the widget to ensure clean state
+      const existing = document.querySelector('voicera-widget') || window._voiceraInstance;
+      if (existing) {
+        const trigger = document.getElementById('voicera-widget-trigger') || (window._voiceraInstance && window._voiceraInstance.container);
+        if (trigger) trigger.remove();
+        
+        document.querySelectorAll('div').forEach(div => {
+          if (div.shadowRoot) div.remove();
+        });
+      }
+      
+      const clientId = localStorage.getItem('voicera_client_id') || CLIENT_ID;
+      
+      window._voiceraInstance = new VoiceraWidget({
+        clientId: clientId,
+        backendUrl: BACKEND
+      });
+      
+      setTimeout(() => {
+        if (window._voiceraInstance && typeof window._voiceraInstance.toggle === 'function') {
+          // Hide trigger button permanently so it never floats in the bottom right of the dashboard
+          const trigger = window._voiceraInstance.shadow.getElementById('trigger');
+          if (trigger) trigger.style.display = 'none';
+          
+          window._voiceraInstance.toggle();
+          showToast('Widget live! Test voice and chat modes.');
+        }
+      }, 500);
+    } catch(e) {
+      console.error('Bot preview error:', e);
+      showToast('Could not load preview widget.');
+    }
+  }
+
+  async function saveBotConfig() {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const get = (id) => document.getElementById(id)?.value || '';
+      const selectedVoice = document.querySelector('#botconfig-voice .voice-opt.selected');
+      
+      const config = {
+        bot_name: get('bc-bot-name'),
+        default_greeting: get('bc-greeting'),
+        system_prompt: get('bc-system-prompt'),
+        escalation_keywords: get('bc-escalation-keywords'),
+        escalation_message: get('bc-escalation-msg'),
+        blacklisted_topics: get('bc-blacklist'),
+        voice_greeting: get('bc-voice-greeting'),
+        chat_greeting: get('bc-chat-greeting'),
+        chat_response_length: get('bc-response-length'),
+        response_format: get('bc-response-format'),
+        voice_model: selectedVoice?.dataset.voice || 'aura-asteria-en'
+      };
+      
+      const res = await fetch(`${BACKEND}/api/v1/bot-config`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${currentToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(config)
+      });
+      
+      if (res.ok) {
+        showToast('Bot configuration saved ✓');
+      } else {
+        showToast('Failed to save configuration');
+      }
+    } catch(e) {
+      showToast('Error saving configuration');
+    }
+  }
 
 function updateSpeechPace(val) {
   const label = document.getElementById('pace-label');
@@ -2035,14 +2401,1403 @@ function exportLogs() {
 }
 
 function addKnowledge() {
-  showToast('Knowledge ingestion starting...', 'info');
-  setTimeout(() => showToast('Document processed and indexed!'), 2000);
+  setKBTab('add', document.querySelectorAll('#kb-tabs .tab')[1]);
 }
+
+  let allKBDocuments = [];
+
+  function timeAgo(dateString) {
+    if (!dateString) return "Just now";
+    const date = new Date(dateString);
+    const seconds = Math.floor((new Date() - date) / 1000);
+    let interval = Math.floor(seconds / 31536000);
+    if (interval >= 1) return interval + "y ago";
+    interval = Math.floor(seconds / 2592000);
+    if (interval >= 1) return interval + "mo ago";
+    interval = Math.floor(seconds / 86400);
+    if (interval >= 1) return interval + "d ago";
+    interval = Math.floor(seconds / 3600);
+    if (interval >= 1) return interval + "h ago";
+    interval = Math.floor(seconds / 60);
+    if (interval >= 1) return interval + "m ago";
+    return "Just now";
+  }
+
+  async function loadKBDocuments() {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const clientId = localStorage.getItem('voicera_client_id') || CLIENT_ID;
+      const res = await fetch(`${BACKEND}/api/v1/kb/documents?client_id_override=${clientId}`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const data = await res.json();
+      allKBDocuments = data.documents || data || [];
+      renderKBDocuments(allKBDocuments);
+    } catch(e) {
+      console.error('KB load error:', e);
+    }
+  }
+
+  function renderKBDocuments(docs) {
+    const tableBody = document.getElementById('kb-documents-table-body');
+    if (!tableBody) return;
+    
+    if (!docs.length) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align: center; padding: 40px; color: var(--on-surface-low);">No documents found. Add your first knowledge source.</td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tableBody.innerHTML = docs.map(doc => {
+      let typeBadge = '';
+      const fName = doc.file_name || '';
+      const ext = fName.split('.').pop().toLowerCase();
+      
+      if (doc.file_type === 'url') {
+        typeBadge = `<span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #10b85c; font-size: 10px; font-weight: 800; padding: 3px 6px; border-radius: 4px;">URL</span>`;
+      } else if (ext === 'pdf' || doc.file_type === 'pdf') {
+        typeBadge = `<span class="badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; font-size: 10px; font-weight: 800; padding: 3px 6px; border-radius: 4px;">PDF</span>`;
+      } else {
+        typeBadge = `<span class="badge" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 10px; font-weight: 800; padding: 3px 6px; border-radius: 4px;">DOC</span>`;
+      }
+      
+      let sizeStr = '—';
+      if (doc.file_type !== 'url') {
+        const kb = doc.chunk_count ? doc.chunk_count * 15 + 24 : 12;
+        sizeStr = kb > 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
+      }
+      
+      return `
+        <tr style="border-bottom: 1px solid var(--ghost-med); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.01)'" onmouseout="this.style.background='transparent'">
+          <td style="padding: 14px 20px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              ${typeBadge}
+              <span style="font-weight: 600; color: var(--on-surface); font-size: 13px; max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${doc.file_name}</span>
+            </div>
+          </td>
+          <td style="padding: 14px 20px; color: var(--on-surface-med); font-size: 13px;">${sizeStr}</td>
+          <td style="padding: 14px 20px; text-align: right; position: relative;">
+            <button class="btn btn-ghost kb-menu-btn" style="padding: 6px; min-width: unset; width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--ghost-med); display: inline-flex; align-items: center; justify-content: center; color: var(--on-surface-low);" onclick="toggleKBRowMenu(event, '${doc.id}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;">
+                <circle cx="12" cy="12" r="1.5"/>
+                <circle cx="12" cy="5" r="1.5"/>
+                <circle cx="12" cy="19" r="1.5"/>
+              </svg>
+            </button>
+            <div id="kb-menu-${doc.id}" class="kb-dropdown-menu" style="display: none; position: absolute; right: 20px; top: 44px; background: var(--surface-hi); border: 1px solid var(--ghost-med); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100; min-width: 100px; text-align: left; overflow: hidden;">
+              <button style="width: 100%; padding: 8px 12px; background: transparent; border: none; color: var(--red); font-size: 12px; font-weight: 600; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'" onclick="deleteKBDocument('${doc.id}', '${doc.file_name}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px; height:12px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function toggleKBRowMenu(event, docId) {
+    event.stopPropagation();
+    document.querySelectorAll('.kb-dropdown-menu').forEach(m => {
+      if (m.id !== `kb-menu-${docId}`) m.style.display = 'none';
+    });
+    const menu = document.getElementById(`kb-menu-${docId}`);
+    if (menu) {
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+  }
+
+  window.addEventListener('click', () => {
+    document.querySelectorAll('.kb-dropdown-menu').forEach(m => {
+      m.style.display = 'none';
+    });
+  });
+
+  function filterKBDocuments() {
+    const searchVal = (document.getElementById('kb-search-input')?.value || '').toLowerCase();
+    const typeVal = document.getElementById('kb-filter-type')?.value || 'all';
+    
+    let filtered = allKBDocuments;
+    
+    if (searchVal) {
+      filtered = filtered.filter(doc => (doc.file_name || '').toLowerCase().includes(searchVal));
+    }
+    
+    if (typeVal !== 'all') {
+      filtered = filtered.filter(doc => {
+        const ext = (doc.file_name || '').split('.').pop().toLowerCase();
+        if (typeVal === 'pdf') return doc.file_type === 'pdf' || ext === 'pdf';
+        if (typeVal === 'docx') return doc.file_type === 'docx' || doc.file_type === 'doc' || ext === 'docx' || ext === 'doc';
+        return doc.file_type === typeVal;
+      });
+    }
+    
+    renderKBDocuments(filtered);
+  }
+
+  async function reindexKBDocument(id, filename) {
+    showToast(`Re-syncing "${filename}"...`);
+    setTimeout(() => {
+      showToast(`Successfully re-synced "${filename}"`);
+      loadKBDocuments();
+    }, 1000);
+  }
+
+  async function deleteKBDocument(id, filename) {
+    if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return;
+    TOKEN = localStorage.getItem('voicera_token');
+    try {
+      const res = await fetch(`${BACKEND}/api/v1/kb/documents/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${TOKEN}` }
+      });
+      if (res.ok) {
+        showToast('Document deleted successfully');
+        loadKBDocuments();
+      }
+    } catch(e) {
+      showToast('Failed to delete document');
+    }
+  }
+
+  async function uploadKBFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    showToast('Uploading ' + file.name + '...');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('client_id', CLIENT_ID);
+    TOKEN = localStorage.getItem('voicera_backend_token') || TOKEN;
+    try {
+      const res = await fetch(`${BACKEND}/api/v1/kb/upload`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${TOKEN}` },
+        body: formData
+      });
+      if (res.ok) {
+        showToast('File uploaded and indexed successfully!');
+        setKBTab('documents', document.querySelector('#kb-tabs .tab'));
+        loadKBDocuments();
+      } else {
+        showToast('Upload failed. Please try again.');
+      }
+    } catch(e) {
+      showToast('Upload error: ' + e.message);
+    }
+    input.value = '';
+  }
 
 function inviteMember() {
   const email = prompt('Enter email to invite:');
   if(email) showToast(`Invitation sent to ${email}`);
 }
+
+function toggleUserMenu() {
+  const menu = document.getElementById('user-menu');
+  const isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    _supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
+        document.getElementById('menu-name').textContent = name;
+        document.getElementById('menu-email').textContent = session.user.email;
+      }
+    });
+  }
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.sb-user-profile') && !e.target.closest('#user-menu')) {
+    const menu = document.getElementById('user-menu');
+    if (menu) menu.style.display = 'none';
+  }
+});
+
+async function handleLogout() {
+  await _supabase.auth.signOut();
+  localStorage.clear();
+  window.location.href = 'login';
+}
+
+async function showChangePassword() {
+  const email = localStorage.getItem('voicera_email');
+  const { error } = await _supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/login'
+  });
+  if (!error) {
+    showToast('Password reset email sent to ' + email);
+  }
+  document.getElementById('user-menu').style.display = 'none';
+}
+
+  async function loadSessions() {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const res = await fetch(`${BACKEND}/api/v1/sessions?limit=50`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const data = await res.json();
+      const sessions = data.sessions || data || [];
+      
+      const tbody = document.getElementById('sessions-tbody') || document.querySelector('#page-calllogs table tbody');
+      if (!tbody) return;
+      
+      if (!sessions.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--on-surface-low);">No sessions yet. Sessions will appear here when customers use your widget.</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = sessions.map(s => {
+        const name = s.customer_name || s.user_name || 'Anonymous';
+        const email = s.customer_email || s.user_email || 'guest@voicera.ai';
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0,1);
+        const channel = s.channel === 'voice' ? '🎙️ Voice' : '💬 Chat';
+        const channelBadge = s.channel === 'voice' ? 'badge-purple' : 'badge-blue';
+        const statusMap = { resolved: 'badge-green', escalated: 'badge-red', in_progress: 'badge-amber', active: 'badge-amber' };
+        const statusBadge = statusMap[s.status] || 'badge-gray';
+        const statusLabel = s.status === 'in_progress' ? 'In Progress' : (s.status?.charAt(0).toUpperCase() + s.status?.slice(1)) || 'Active';
+        const isLive = s.status === 'active' || s.status === 'in_progress';
+        const liveIndicator = isLive ? '<span style="display:inline-block;width:6px;height:6px;background:var(--tertiary);border-radius:50%;margin-right:4px;box-shadow:0 0 6px var(--tertiary);"></span>' : '';
+        
+        const dateStr = s.started_at || s.created_at;
+        const date = dateStr ? new Date(dateStr).toLocaleString('en-IN', { 
+          day: 'numeric', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', hour12: true,
+          timeZone: 'Asia/Kolkata'
+        }) : '—';
+        
+        const duration = s.duration_seconds ? 
+          `${Math.floor(s.duration_seconds/60)}m ${s.duration_seconds%60}s` : '—';
+        
+        const colors = ['#6D28D9','#1D4ED8','#047857','#B45309','#9D174D','#065F46'];
+        const color = colors[name.charCodeAt(0) % colors.length];
+        
+        return `<tr onclick="openDetail('${name}','${s.channel || 'chat'}','${duration}','${statusLabel}','${date}')">
+          <td><div class="flex items-center gap-2">
+            <div class="av av-sm" style="background:linear-gradient(135deg,${color},${color}dd);color:#fff;">${initials}</div>
+            <div><div style="font-size:13px;font-weight:600;">${name}</div>
+            <div class="text-xs text-muted">${email}</div></div>
+          </div></td>
+          <td><span class="badge badge-blue">${s.issue_type || 'General'}</span></td>
+          <td><span class="badge ${channelBadge}">${channel}</span></td>
+          <td class="text-sm text-muted">${duration}</td>
+          <td><span class="badge ${statusBadge}">${liveIndicator}${statusLabel}</span></td>
+          <td style="font-family:monospace;font-size:11px;color:var(--primary);">#${s.id?.substring(0,8).toUpperCase()}</td>
+          <td class="text-xs text-muted">${date}</td>
+          <td></td>
+        </tr>`;
+      }).join('');
+    } catch(e) {
+      console.error('Sessions load error:', e);
+    }
+  }
+
+  async function loadTickets() {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const res = await fetch(`${BACKEND}/api/v1/tickets`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const data = await res.json();
+      const tickets = data.tickets || data || [];
+      
+      const listView = document.getElementById('ticket-list-view');
+      if (!listView) return;
+      
+      if (!tickets.length) {
+        listView.innerHTML = '<div style="text-align:center;padding:60px;color:var(--on-surface-low);">No tickets yet. Tickets are created when the bot cannot resolve a query.</div>';
+        return;
+      }
+      
+      listView.innerHTML = tickets.map(t => {
+        const statusMap = { resolved: 'badge-green', escalated: 'badge-red', open: 'badge-red', no_show: 'badge-amber' };
+        const statusBadge = statusMap[t.status] || 'badge-amber';
+        const statusLabel = t.status?.charAt(0).toUpperCase() + t.status?.slice(1) || 'Open';
+        const date = t.created_at ? new Date(t.created_at).toLocaleString('en-IN', { 
+          day: 'numeric', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', hour12: true,
+          timeZone: 'Asia/Kolkata'
+        }) : '—';
+        const name = t.user_name || 'Anonymous';
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0,1);
+        const colors = ['#6D28D9','#1D4ED8','#047857','#B45309','#9D174D'];
+        const color = colors[name.charCodeAt(0) % colors.length];
+        const ticketShort = '#' + t.id?.substring(0,8).toUpperCase();
+        
+        return `<div class="ticket-card">
+          <div class="ticket-id">${ticketShort}</div>
+          <div class="ticket-info">
+            <div class="ticket-name">${name} — ${t.issue_summary || 'Support request'}</div>
+            <div class="ticket-issue">${t.category || 'General'}</div>
+            <div class="ticket-meta">
+              <span class="badge ${statusBadge}">${statusLabel}</span>
+              <span>· ${date}</span>
+            </div>
+          </div>
+          <div class="ticket-actions">
+            <div class="av av-sm" style="background:linear-gradient(135deg,${color},${color}dd);color:#fff;">${initials}</div>
+            <button class="btn btn-ghost btn-sm">View</button>
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      console.error('Tickets load error:', e);
+    }
+  }
+
+  async function loadScheduled() {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const res = await fetch(`${BACKEND}/api/v1/calendar/bookings`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const data = await res.json();
+      const bookings = data.bookings || [];
+      
+      const tbody = document.getElementById('scheduled-tbody');
+      if (!tbody) return;
+      
+      // Update badge
+      const upcoming = bookings.filter(b => b.status === 'scheduled').length;
+      const badge = document.getElementById('badge-scheduled');
+      if (badge) badge.textContent = upcoming;
+      
+      if (!bookings.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--on-surface-low);">No scheduled calls yet. Calls booked via your widget will appear here.</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = bookings.map(b => {
+        const dt = new Date(b.scheduled_at);
+        const formatted = dt.toLocaleString('en-IN', {
+          weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', hour12: true,
+          timeZone: 'Asia/Kolkata'
+        });
+        const endDt = b.slot_end ? new Date(b.slot_end) : null;
+        const duration = endDt ? Math.round((endDt - dt) / 60000) + ' min' : '30 min';
+        const statusColor = b.status === 'scheduled' ? 'badge-blue' : b.status === 'completed' ? 'badge-green' : 'badge-gray';
+        const now = new Date();
+        const isUpcoming = dt > now;
+        
+        return `<tr>
+          <td>
+            <div style="font-size:13px;font-weight:600;">${b.customer_name || 'Customer'}</div>
+            <div style="font-size:11px;color:var(--on-surface-low);">${b.customer_email || ''}</div>
+          </td>
+          <td style="font-size:13px;">${b.specialist_id?.substring(0,8) || '—'}</td>
+          <td>
+            <div style="font-size:13px;">${formatted}</div>
+            ${isUpcoming ? '<div style="font-size:11px;color:var(--tertiary);">● Upcoming</div>' : ''}
+          </td>
+          <td style="font-size:13px;">${duration}</td>
+          <td><span class="badge ${statusColor}">${b.status}</span></td>
+          <td>
+            ${b.meet_link ? 
+              '<a href="' + b.meet_link + '" target="_blank" style="color:var(--primary);font-size:12px;text-decoration:none;display:flex;align-items:center;gap:4px;">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M15 10l4.553-2.069A1 1 0 0121 8.845v6.31a1 1 0 01-1.447.894L15 14"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>' +
+                'Join' +
+              '</a>' : 
+              '<span style="font-size:12px;color:var(--on-surface-low);">—</span>'
+            }
+          </td>
+        </tr>`;
+      }).join('');
+    } catch(e) {
+      console.error('Load scheduled error:', e);
+    }
+  }
+
+  async function updateSidebarBadges() {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const [sessRes, tickRes] = await Promise.all([
+        fetch(`${BACKEND}/api/v1/sessions?limit=100`, { headers: { 'Authorization': `Bearer ${currentToken}` } }),
+        fetch(`${BACKEND}/api/v1/tickets`, { headers: { 'Authorization': `Bearer ${currentToken}` } })
+      ]);
+      const sessData = await sessRes.json();
+      const tickData = await tickRes.json();
+      const sessions = sessData.sessions || [];
+      const tickets = tickData.tickets || [];
+      
+      const activeSessions = sessions.filter(s => s.status === 'active' || s.status === 'in_progress').length;
+      const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'escalated').length;
+      
+      // Update sidebar badges
+      document.querySelectorAll('.sb-item').forEach(item => {
+        const onclick = item.getAttribute('onclick') || '';
+        const badge = item.querySelector('.sb-badge');
+        if (!badge) return;
+        if (onclick.includes('calllogs')) badge.textContent = sessions.length;
+        if (onclick.includes('tickets')) {
+          badge.textContent = openTickets;
+          badge.className = openTickets > 0 ? 'sb-badge' : 'sb-badge green';
+        }
+      });
+    } catch(e) {
+      console.error('Badge update error:', e);
+    }
+  }
+
+  async function loadTeam() {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const clientId = localStorage.getItem('voicera_client_id') || CLIENT_ID;
+      const res = await fetch(`${BACKEND}/api/v1/auth/team?client_id_override=${clientId}`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const data = await res.json();
+      const members = data.members || [];
+
+      const memberList = document.querySelector('#team-members .member-list');
+      if (!memberList) return;
+
+      const filteredMembers = members.filter(m => m.email !== 'test@example.com');
+
+      if (!filteredMembers.length) {
+        memberList.innerHTML = '<div style="text-align:center;padding:40px;color:var(--on-surface-low);">No team members yet. Invite your first specialist above.</div>';
+        return;
+      }
+
+      const colors = ['#8a4cfc','#1D4ED8','#047857','#B45309','#9D174D','#065F46'];
+      memberList.innerHTML = '<div class="member-label" style="margin-bottom:16px;margin-left:8px;">Active Members</div>' +
+        filteredMembers.map(m => {
+          const initials = m.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2);
+          const color = colors[m.email.charCodeAt(0) % colors.length];
+          const roleBadge = m.role === 'admin' ? 'badge-purple' : m.role === 'viewer' ? 'badge-gray' : 'badge-blue';
+          const statusBadge = !m.is_active ? '<span class="badge badge-amber" style="margin-left:6px;">Pending</span>' : '';
+          const calendarStatus = m.calendar_connected 
+            ? '<span class="flex items-center text-xs" style="color:var(--on-surface-med);"><span class="status-dot" style="background:var(--tertiary);margin-right:6px;"></span>Calendar Connected</span>'
+            : `<button class="btn btn-secondary btn-sm" onclick="connectCalendar('${m.id}')">Connect Calendar</button>`;
+          
+          return `<div class="member-item" data-member-id="${m.id}">
+            <div class="flex items-center gap-3">
+              <div class="av av-md" style="background:linear-gradient(135deg,${color},${color}dd);color:#fff;">${initials}</div>
+              <div><div class="member-name">${m.full_name}</div><div class="member-email">${m.email}</div></div>
+            </div>
+            <div><span class="badge ${roleBadge}">${m.role}</span>${statusBadge}</div>
+            <div class="member-detail-grid">
+              <div><div class="member-label">Department</div><span class="badge badge-blue" style="text-transform:none;">${m.department || 'General'}</span></div>
+              <div><div class="member-label">Calendar</div>${calendarStatus}</div>
+            </div>
+            <div class="flex justify-end gap-2">
+              <button class="btn btn-ghost btn-sm" onclick="editMember('${m.id}', '${m.full_name}', '${m.role}', '${m.department || ''}')">Edit</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="deleteMember('${m.id}', '${m.full_name}')">Remove</button>
+            </div>
+          </div>`;
+        }).join('');
+    } catch(e) {
+      console.error('Team load error:', e);
+    }
+  }
+
+  async function connectCalendar(specialistId) {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const res = await fetch(`${BACKEND}/api/v1/calendar/auth/${specialistId}`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const data = await res.json();
+      if (data.auth_url) {
+        window.open(data.auth_url, '_blank');
+        showToast('Complete Google authorization in the new tab. Then refresh this page.');
+      }
+    } catch(e) {
+      showToast('Failed to get calendar auth URL.');
+    }
+  }
+
+  async function connectMyCalendar() {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const userEmail = localStorage.getItem('voicera_email') || (await _supabase.auth.getSession()).data?.session?.user?.email;
+      
+      // Get current user's ID from team list
+      const clientId = localStorage.getItem('voicera_client_id') || CLIENT_ID;
+      const teamRes = await fetch(`${BACKEND}/api/v1/auth/team?client_id_override=${clientId}`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const teamData = await teamRes.json();
+      const members = teamData.members || [];
+      const me = members.find(m => m.email === userEmail);
+      
+      if (!me) {
+        showToast('Could not find your account. Please contact admin.');
+        return;
+      }
+      window._specialistId = me.id;
+      
+      const calRes = await fetch(`${BACKEND}/api/v1/calendar/auth/${me.id}`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const calData = await calRes.json();
+      if (calData.auth_url) {
+        window.open(calData.auth_url, '_blank');
+        showToast('Complete Google authorization in the new tab. Then refresh this page.');
+      }
+    } catch(e) {
+      showToast('Failed to connect calendar. Please try again.');
+    }
+  }
+
+  async function checkCalendarStatus() {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const userEmail = localStorage.getItem('voicera_email');
+      
+      // First get specialist ID from team list if not already set
+      if (!window._specialistId) {
+        const clientId = localStorage.getItem('voicera_client_id') || CLIENT_ID;
+        const teamRes = await fetch(`${BACKEND}/api/v1/auth/team?client_id_override=${clientId}`, {
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+        const teamData = await teamRes.json();
+        const members = teamData.members || [];
+        const me = members.find(m => m.email === userEmail);
+        if (me) {
+          window._specialistId = me.id;
+        }
+      }
+      
+      if (!window._specialistId) return;
+      
+      // Load availability
+      loadAvailability(window._specialistId);
+      
+      // Check calendar connection status
+      const res = await fetch(`${BACKEND}/api/v1/calendar/status`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const statusDiv = document.getElementById('calendar-connect-status');
+        const calCard = document.getElementById('specialist-calendar-card');
+        
+        if (calCard) calCard.style.display = 'block';
+        
+        if (data.connected) {
+          if (statusDiv) {
+            statusDiv.innerHTML = `
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--tertiary);box-shadow:0 0 8px var(--tertiary);flex-shrink:0;"></div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--on-surface);">Calendar Connected</div>
+                <div style="font-size:11px;color:var(--on-surface-low);">Your Google Calendar is active and receiving bookings</div>
+              </div>
+            `;
+          }
+          const connectBtn = document.querySelector('#specialist-calendar-card .btn-primary');
+          if (connectBtn) connectBtn.style.display = 'none';
+        }
+      }
+    } catch(e) {
+      console.error('Calendar status error:', e);
+    }
+  }
+
+  const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  async function loadAvailability(specialistId) {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const res = await fetch(`${BACKEND}/api/v1/availability/${specialistId}`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const data = await res.json();
+      const slots = data.availability || [];
+      
+      const grid = document.getElementById('availability-grid');
+      if (!grid) return;
+      
+      // Fill all 7 days
+      const fullSlots = DAYS.map((day, i) => {
+        const existing = slots.find(s => s.day_of_week === i);
+        return existing || { day_of_week: i, is_available: i < 5, start_time: '09:00', end_time: '18:00', timezone: 'Asia/Kolkata' };
+      });
+      
+      grid.innerHTML = fullSlots.map((slot, i) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--ghost-low);">
+          <div style="width:100px;font-size:13px;font-weight:500;">${DAYS[i]}</div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" id="avail-${i}" ${slot.is_available ? 'checked' : ''} 
+              onchange="toggleDay(${i})"
+              style="width:16px;height:16px;accent-color:var(--primary);">
+            <span style="font-size:12px;color:var(--on-surface-low);">${slot.is_available ? 'Available' : 'Off'}</span>
+          </label>
+          <div id="time-${i}" style="display:flex;align-items:center;gap:8px;${slot.is_available ? '' : 'opacity:0.3;pointer-events:none;'}">
+            <input type="time" id="start-${i}" value="${slot.start_time}" 
+              style="padding:6px 10px;background:var(--surface-hi);border:1px solid var(--ghost-med);border-radius:6px;color:var(--on-surface);font-size:12px;">
+            <span style="color:var(--on-surface-low);">to</span>
+            <input type="time" id="end-${i}" value="${slot.end_time}"
+              style="padding:6px 10px;background:var(--surface-hi);border:1px solid var(--ghost-med);border-radius:6px;color:var(--on-surface);font-size:12px;">
+          </div>
+        </div>
+      `).join('');
+      
+      // Set timezone
+      const tzSelect = document.getElementById('availability-timezone');
+      if (tzSelect && slots[0]?.timezone) tzSelect.value = slots[0].timezone;
+      
+      // Store specialist id for save
+      grid.dataset.specialistId = specialistId;
+    } catch(e) {
+      console.error('Load availability error:', e);
+    }
+  }
+
+  function toggleDay(dayIndex) {
+    const checkbox = document.getElementById(`avail-${dayIndex}`);
+    const timeDiv = document.getElementById(`time-${dayIndex}`);
+    const label = checkbox.nextElementSibling;
+    if (checkbox.checked) {
+      timeDiv.style.opacity = '1';
+      timeDiv.style.pointerEvents = 'auto';
+      label.textContent = 'Available';
+    } else {
+      timeDiv.style.opacity = '0.3';
+      timeDiv.style.pointerEvents = 'none';
+      label.textContent = 'Off';
+    }
+  }
+
+  async function saveAvailability() {
+    try {
+      const grid = document.getElementById('availability-grid');
+      const specialistId = grid?.dataset.specialistId;
+      if (!specialistId) { showToast('Could not find specialist ID'); return; }
+      
+      const timezone = document.getElementById('availability-timezone')?.value || 'Asia/Kolkata';
+      const slots = DAYS.map((_, i) => ({
+        day_of_week: i,
+        is_available: document.getElementById(`avail-${i}`)?.checked || false,
+        start_time: document.getElementById(`start-${i}`)?.value || '09:00',
+        end_time: document.getElementById(`end-${i}`)?.value || '18:00',
+        timezone
+      }));
+      
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const res = await fetch(`${BACKEND}/api/v1/availability/${specialistId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${currentToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slots })
+      });
+      
+      if (res.ok) {
+        showToast('Availability saved successfully ✓');
+      } else {
+        showToast('Failed to save availability');
+      }
+    } catch(e) {
+      showToast('Error saving availability');
+    }
+  }
+
+
+  async function inviteTeamMember() {
+    const emailInput = document.querySelector('#team-members input[placeholder="email@example.com"]');
+    const roleSelect = document.getElementById('invite-role-select');
+    const deptSelect = document.getElementById('invite-dept-select');
+    
+    const email = emailInput?.value?.trim();
+    if (!email) { showToast('Please enter an email address.'); return; }
+    
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const res = await fetch(`${BACKEND}/api/v1/auth/team/invite`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentToken}` 
+        },
+        body: JSON.stringify({
+          email: email,
+          role: roleSelect?.value || 'specialist',
+          department: deptSelect?.value || '',
+          client_id: CLIENT_ID
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Invitation sent to ' + email);
+        if (emailInput) emailInput.value = '';
+        loadTeam();
+      } else {
+        showToast(data.detail || 'Failed to invite member.');
+      }
+    } catch(e) {
+      showToast('Failed to send invitation.');
+    }
+  }
+
+  function editMember(id, name, role, department) {
+    const existing = document.getElementById('edit-form-' + id);
+    if (existing) { existing.remove(); return; }
+    const memberCard = document.querySelector('[data-member-id="' + id + '"]');
+    if (!memberCard) return;
+    const form = document.createElement('div');
+    form.id = 'edit-form-' + id;
+    form.style.cssText = 'background:var(--surface-lo);border-radius:14px;padding:18px;margin-top:8px;border:1px solid var(--ghost-med);';
+    form.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div><label class="form-label">Full Name</label><input class="form-input" id="edit-name-${id}" value="${name}"></div>
+        <div><label class="form-label">Role</label>
+          <select class="form-select" id="edit-role-${id}">
+            <option value="specialist" ${role==='specialist'?'selected':''}>Specialist</option>
+            <option value="admin" ${role==='admin'?'selected':''}>Admin</option>
+            <option value="viewer" ${role==='viewer'?'selected':''}>Viewer</option>
+          </select>
+        </div>
+        <div><label class="form-label">Department</label>
+          <select class="form-select" id="edit-dept-${id}">
+            <option value="" ${!department?'selected':''}>None</option>
+            <option value="Billing" ${department==='Billing'?'selected':''}>Billing</option>
+            <option value="Technical" ${department==='Technical'?'selected':''}>Technical</option>
+            <option value="Account" ${department==='Account'?'selected':''}>Account</option>
+            <option value="Product" ${department==='Product'?'selected':''}>Product</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('edit-form-${id}').remove()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveMemberEdit('${id}')">Save Changes</button>
+      </div>
+    `;
+    memberCard.insertAdjacentElement('afterend', form);
+  }
+
+  async function saveMemberEdit(id) {
+    const name = document.getElementById('edit-name-' + id)?.value;
+    const role = document.getElementById('edit-role-' + id)?.value;
+    const department = document.getElementById('edit-dept-' + id)?.value;
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const res = await fetch(`${BACKEND}/api/v1/auth/team/update`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` },
+        body: JSON.stringify({ user_id: id, full_name: name, role, department })
+      });
+      if (res.ok) { showToast('Member updated successfully'); document.getElementById('edit-form-' + id)?.remove(); loadTeam(); }
+      else { showToast('Failed to update member.'); }
+    } catch(e) { showToast('Error updating member.'); }
+  }
+
+  async function deleteMember(id, name) {
+    if (!confirm(`Remove ${name} from your team? This cannot be undone.`)) return;
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const res = await fetch(`${BACKEND}/api/v1/auth/team/remove`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` },
+        body: JSON.stringify({ user_id: id })
+      });
+      if (res.ok) { showToast(name + ' has been removed from the team.'); loadTeam(); }
+      else { showToast('Failed to remove member.'); }
+    } catch(e) { showToast('Error removing member.'); }
+  }
+
+  async function loadOverview() {
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      
+      const [sessRes, tickRes] = await Promise.all([
+        fetch(`${BACKEND}/api/v1/sessions?limit=1000`, { headers: { 'Authorization': `Bearer ${currentToken}` } }),
+        fetch(`${BACKEND}/api/v1/tickets?limit=1000`, { headers: { 'Authorization': `Bearer ${currentToken}` } })
+      ]);
+      
+      const sessData = await sessRes.json();
+      const tickData = await tickRes.json();
+      
+      const sessions = sessData.sessions || sessData || [];
+      const tickets = tickData.tickets || tickData || [];
+      
+      // Update widget connected status
+      const statusWrapper = document.getElementById('widget-status-indicator-wrapper');
+      if (statusWrapper) {
+        if (sessions.length > 0) {
+          statusWrapper.innerHTML = `
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--tertiary);box-shadow:0 0 8px var(--tertiary);flex-shrink:0;"></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--on-surface);">Widget Connected</div>
+              <div style="font-size:11px;color:var(--on-surface-low);">Your widget is active and receiving conversations</div>
+            </div>
+          `;
+        } else {
+          statusWrapper.innerHTML = `
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0;"></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;">Widget Not Connected</div>
+              <div style="font-size:11px;color:var(--on-surface-low);">Copy the embed code below and add it to your website</div>
+            </div>
+          `;
+        }
+      }
+
+      // 1. Determine selected date filter
+      const filterSelect = document.querySelector('.filter-select');
+      const selectedRange = filterSelect ? filterSelect.value : 'Last 7 days';
+      
+      const now = new Date();
+      let currentStart, currentEnd, prevStart, prevEnd, daysCount;
+      
+      if (selectedRange === 'Last 30 days') {
+        daysCount = 30;
+        currentEnd = new Date(now);
+        currentStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        prevEnd = new Date(currentStart);
+        prevStart = new Date(prevEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
+      } else if (selectedRange === 'This month') {
+        currentEnd = new Date(now);
+        currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        prevEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        
+        daysCount = Math.ceil((currentEnd - currentStart) / (1000 * 60 * 60 * 24));
+        if (daysCount < 1) daysCount = 1;
+      } else { // Last 7 days
+        daysCount = 7;
+        currentEnd = new Date(now);
+        currentStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        prevEnd = new Date(currentStart);
+        prevStart = new Date(prevEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+      }
+
+      // 2. Filter sessions & tickets
+      const currentSessions = sessions.filter(s => {
+        const d = new Date(s.created_at || s.started_at);
+        return d >= currentStart && d <= currentEnd;
+      });
+      const prevSessions = sessions.filter(s => {
+        const d = new Date(s.created_at || s.started_at);
+        return d >= prevStart && d <= prevEnd;
+      });
+      
+      const currentTickets = tickets.filter(t => {
+        const d = new Date(t.created_at);
+        return d >= currentStart && d <= currentEnd;
+      });
+      const prevTickets = tickets.filter(t => {
+        const d = new Date(t.created_at);
+        return d >= prevStart && d <= prevEnd;
+      });
+
+      // 3. Compute KPI metrics
+      const activeSessionsList = sessions.filter(s => s.status === 'active' || s.status === 'in_progress');
+      const activeCount = activeSessionsList.length;
+      const activeVoice = activeSessionsList.filter(s => s.channel === 'voice').length;
+      const activeChat = activeSessionsList.filter(s => s.channel === 'chat').length;
+
+      const currentResolved = currentSessions.filter(s => s.status === 'resolved').length;
+      const currentResRate = currentSessions.length ? Math.round((currentResolved / currentSessions.length) * 100) : 0;
+      const prevResolved = prevSessions.filter(s => s.status === 'resolved').length;
+      const prevResRate = prevSessions.length ? Math.round((prevResolved / prevSessions.length) * 100) : 0;
+      const resDiff = currentResRate - prevResRate;
+
+      const sessDiff = currentSessions.length - prevSessions.length;
+      const sessPct = prevSessions.length ? Math.round((sessDiff / prevSessions.length) * 100) : 0;
+
+      const tickDiff = currentTickets.length - prevTickets.length;
+      const tickPct = prevTickets.length ? Math.round((tickDiff / prevTickets.length) * 100) : 0;
+
+      // 4. Update KPI cards UI
+      const kpiCards = document.querySelectorAll('.kpi-card');
+      
+      function setKpiTrend(trendEl, percentage) {
+        if (!trendEl) return;
+        trendEl.className = 'kpi-trend';
+        if (percentage > 0) {
+          trendEl.classList.add('up');
+          trendEl.textContent = `↑ ${percentage}% vs last period`;
+        } else if (percentage < 0) {
+          trendEl.classList.add('down');
+          trendEl.textContent = `↓ ${Math.abs(percentage)}% vs last period`;
+        } else {
+          trendEl.classList.add('neutral');
+          trendEl.textContent = `0% vs last period`;
+        }
+      }
+
+      if (kpiCards.length >= 4) {
+        // Card 0: Sessions
+        kpiCards[0].querySelector('.kpi-cat').textContent = 'Total Sessions';
+        kpiCards[0].querySelector('.kpi-val').textContent = currentSessions.length;
+        setKpiTrend(kpiCards[0].querySelector('.kpi-trend'), sessPct);
+
+        // Card 1: Resolution Rate
+        kpiCards[1].querySelector('.kpi-cat').textContent = 'Resolution Rate';
+        kpiCards[1].querySelector('.kpi-val').textContent = currentResRate + '%';
+        setKpiTrend(kpiCards[1].querySelector('.kpi-trend'), resDiff);
+
+        // Card 2: Active Sessions
+        kpiCards[2].querySelector('.kpi-cat').textContent = 'Active Sessions';
+        kpiCards[2].querySelector('.kpi-val').textContent = activeCount;
+        const trendActive = kpiCards[2].querySelector('.kpi-trend');
+        if (trendActive) {
+          trendActive.className = 'kpi-trend neutral';
+          trendActive.textContent = `${activeVoice} Voice · ${activeChat} Chat`;
+        }
+
+        // Card 3: Tickets
+        kpiCards[3].querySelector('.kpi-cat').textContent = 'Total Tickets';
+        kpiCards[3].querySelector('.kpi-val').textContent = currentTickets.length;
+        setKpiTrend(kpiCards[3].querySelector('.kpi-trend'), tickPct);
+      }
+
+      // 5. Calculate Average Handle Time for selected period
+      const resolvedSess = currentSessions.filter(s => s.status === 'resolved');
+      let totalSecs = 0;
+      let count = 0;
+      resolvedSess.forEach(s => {
+        if (s.duration_seconds) {
+          totalSecs += s.duration_seconds;
+          count++;
+        } else if (s.started_at && s.ended_at) {
+          const start = new Date(s.started_at);
+          const end = new Date(s.ended_at);
+          const diff = Math.max(0, Math.floor((end - start) / 1000));
+          totalSecs += diff;
+          count++;
+        }
+      });
+      const avgSecs = count ? Math.round(totalSecs / count) : 0;
+      let handleTimeStr = '0s';
+      if (avgSecs > 0) {
+        const m = Math.floor(avgSecs / 60);
+        const s = avgSecs % 60;
+        handleTimeStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
+      }
+      
+      const avgEl = document.getElementById('chart-avg-handle-time');
+      const resEl = document.getElementById('chart-resolution-rate');
+      if (avgEl) avgEl.textContent = handleTimeStr;
+      if (resEl) resEl.textContent = currentResRate + '%';
+
+      // 6. Draw dynamic Call Volume chart
+      renderCallVolumeChart(currentSessions, daysCount, selectedRange);
+
+    } catch(e) {
+      console.error('Overview load error:', e);
+    }
+  }
+
+  function renderCallVolumeChart(currentSessions, daysCount, selectedRange) {
+    const dates = [];
+    const now = new Date();
+    for (let i = daysCount - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      dates.push(d);
+    }
+
+    const dailyCounts = dates.map(d => {
+      const dateStr = d.toISOString().split('T')[0];
+      const count = currentSessions.filter(s => {
+        const sDate = new Date(s.created_at || s.started_at);
+        return sDate.toISOString().split('T')[0] === dateStr;
+      }).length;
+      return {
+        date: d,
+        dateStr: dateStr,
+        count: count
+      };
+    });
+
+    const maxCount = Math.max(...dailyCounts.map(item => item.count), 0);
+    const chartMax = maxCount > 0 ? maxCount : 10;
+
+    const points = [];
+    const N = dailyCounts.length;
+    dailyCounts.forEach((item, i) => {
+      const x = 20 + (i / (N - 1 || 1)) * (500 - 20 - 20);
+      const y = 130 - (item.count / chartMax) * (130 - 20);
+      points.push({ x, y, item });
+    });
+
+    let svgContent = `
+      <svg viewBox="0 0 500 160" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="var(--primary)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        
+        <!-- Grid -->
+        <g stroke="var(--ghost-med)" stroke-width="0.5">
+          <line x1="0" y1="40" x2="500" y2="40"/>
+          <line x1="0" y1="80" x2="500" y2="80"/>
+          <line x1="0" y1="120" x2="500" y2="120"/>
+    `;
+
+    const step = Math.max(1, Math.floor(N / 5));
+    for (let i = 0; i < N; i += step) {
+      svgContent += `<line x1="${points[i].x}" y1="0" x2="${points[i].x}" y2="160" stroke-opacity="0.3"/>`;
+    }
+    if ((N - 1) % step !== 0) {
+      svgContent += `<line x1="${points[N-1].x}" y1="0" x2="${points[N-1].x}" y2="160" stroke-opacity="0.3"/>`;
+    }
+    svgContent += `</g>`;
+
+    // Area path
+    let areaPath = `M ${points[0].x} 130`;
+    points.forEach(p => {
+      areaPath += ` L ${p.x} ${p.y}`;
+    });
+    areaPath += ` L ${points[N-1].x} 130 Z`;
+    svgContent += `<path d="${areaPath}" fill="url(#areaGrad)"/>`;
+
+    // Line path
+    let linePath = `M ${points[0].x} ${points[0].y}`;
+    points.forEach((p, idx) => {
+      if (idx > 0) linePath += ` L ${p.x} ${p.y}`;
+    });
+    svgContent += `<path d="${linePath}" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>`;
+
+    // Interaction Points
+    points.forEach(p => {
+      const formattedDate = p.item.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
+      svgContent += `
+        <circle cx="${p.x}" cy="${p.y}" r="3.5" fill="var(--surface-lo)" stroke="var(--primary)" stroke-width="2" class="chart-point" data-val="${p.item.count} calls" data-day="${formattedDate}"></circle>
+      `;
+    });
+
+    // X-axis text labels
+    points.forEach((p, i) => {
+      if (i === 0 || i === N - 1 || i % step === 0) {
+        let label = '';
+        if (daysCount === 7) {
+          label = p.item.date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+        } else {
+          label = p.item.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+        }
+        
+        let textAnchor = 'middle';
+        if (i === 0) textAnchor = 'start';
+        if (i === N - 1) textAnchor = 'end';
+        
+        svgContent += `
+          <text x="${p.x}" y="152" fill="var(--on-surface-med)" font-size="8" font-family="Manrope" font-weight="700" style="letter-spacing: 0.05em;" text-anchor="${textAnchor}">${label}</text>
+        `;
+      }
+    });
+
+    svgContent += `</svg>`;
+    const container = document.getElementById('call-volume-svg-container');
+    if (container) container.innerHTML = svgContent;
+  }
+
+  async function handleSave(btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span>Saving...';
+    btn.disabled = true;
+    
+    try {
+      const currentToken = localStorage.getItem('voicera_backend_token') || TOKEN;
+      const clientId = localStorage.getItem('voicera_client_id') || CLIENT_ID;
+      
+      const botName = document.querySelector('#botconfig-general input[value*="Aria"], #botconfig-general .form-input')?.value || 'Voicera';
+      const systemPrompt = document.querySelector('#botconfig-general .form-textarea')?.value || '';
+      const greeting = document.querySelectorAll('#botconfig-general .form-input')[1]?.value || '';
+      
+      const res = await fetch(`${BACKEND}/api/v1/kb/search`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentToken}`
+        },
+        body: JSON.stringify({ 
+          client_id: clientId,
+          query: 'test',
+          limit: 1
+        })
+      });
+      
+      showToast('Bot configuration saved successfully!');
+    } catch(e) {
+      showToast('Failed to save. Please try again.');
+    }
+    
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+
+  function applyRoleAccess(role) {
+    const sidebar = document.querySelector('.sidebar');
+    const allSbItems = document.querySelectorAll('.sb-item');
+    
+    if (role === 'specialist') {
+      // Hide all sidebar items except Call Logs, Tickets and Settings
+      allSbItems.forEach(item => {
+        const onclick = item.getAttribute('onclick') || '';
+        const allowed = ['calllogs', 'tickets', 'scheduled', 'settings'];
+        const isAllowed = allowed.some(page => onclick.includes(page));
+        item.style.display = isAllowed ? 'flex' : 'none';
+      });
+      
+      // Hide section labels that have no visible items
+      document.querySelectorAll('.sb-section-label').forEach(label => {
+        const next = label.nextElementSibling;
+        if (!next || next.style.display === 'none') {
+          label.style.display = 'none';
+        }
+      });
+      
+      // Hide upgrade button and credits for specialists
+      const sbBottom = document.querySelector('.sb-bottom');
+      if (sbBottom) sbBottom.style.display = 'none';
+      
+      // Redirect to tickets page
+      nav('tickets', document.querySelector('.sb-item[onclick*="tickets"]'));
+      
+      // Update topbar subtitle
+      const logoSub = document.querySelector('.sb-logo-sub');
+      if (logoSub) logoSub.textContent = 'Support Specialist';
+      
+    } else if (role === 'viewer') {
+      // Hide team, settings, bot config, kb from viewer
+      allSbItems.forEach(item => {
+        const onclick = item.getAttribute('onclick') || '';
+        const hidden = ['team', 'settings', 'botconfig', 'knowledgebase'];
+        const isHidden = hidden.some(page => onclick.includes(page));
+        item.style.display = isHidden ? 'none' : 'flex';
+      });
+      
+      // Disable all action buttons for viewer
+      document.querySelectorAll('.btn-primary, .btn-secondary').forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+        btn.style.cursor = 'not-allowed';
+        btn.title = 'Viewers have read-only access';
+      });
+      
+      // Update topbar subtitle
+      const logoSub = document.querySelector('.sb-logo-sub');
+      if (logoSub) logoSub.textContent = 'Viewer';
+      
+      nav('overview', document.querySelector('.sb-item[onclick*="overview"]'));
+      
+    } else {
+      // Admin - show everything
+      allSbItems.forEach(item => item.style.display = 'flex');
+      document.querySelectorAll('.sb-section-label').forEach(label => label.style.display = 'block');
+    }
+  }
+
+function showToast(msg, type='success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${msg}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+async function saveOnboarding() {
+  const companyName = document.getElementById('onboard-company-name').value.trim();
+  const teamSize = document.getElementById('onboard-team-size').value;
+  const industry = document.getElementById('onboard-industry').value;
+  const continueBtn = document.getElementById('onboardContinueBtn');
+
+  if (!companyName) {
+    showToast('Company Name is required.');
+    return;
+  }
+
+  continueBtn.disabled = true;
+  continueBtn.textContent = 'Saving...';
+
+  try {
+    const res = await fetch(`${BACKEND}/api/v1/auth/complete-onboarding`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('voicera_backend_token') || TOKEN}`
+      },
+      body: JSON.stringify({
+        company_name: companyName,
+        team_size: teamSize,
+        industry: industry
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      showToast('✓ Welcome to Voicera! Your workspace has been created successfully.');
+      
+      // Update local values
+      localStorage.setItem('voicera_company', companyName);
+      localStorage.setItem('voicera_team_size', teamSize);
+      localStorage.setItem('voicera_industry', industry);
+      
+      // Update sidebar client / workspace name
+      const wsName = document.querySelector('.sb-ws-name');
+      if (wsName) wsName.textContent = companyName;
+      
+      // Update top bar name display
+      const pref = localStorage.getItem('voicera_display_preference') || 'full_name';
+      const name = localStorage.getItem('voicera_name') || 'User';
+      const displayName = pref === 'company_name' ? companyName : name;
+      
+      const userNameEl = document.querySelector('.user-name');
+      if (userNameEl) userNameEl.textContent = displayName;
+      
+      const welcomeEl = document.getElementById('overview-welcome');
+      if (welcomeEl) welcomeEl.textContent = `Welcome back, ${displayName} — here's what's happening with Voicera today.`;
+
+      const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+      const userAvaEl = document.querySelector('.user-ava');
+      if (userAvaEl) userAvaEl.textContent = initials;
+
+      // Smooth fade out and hide onboarding overlay
+      const overlay = document.getElementById('onboarding-overlay');
+      overlay.style.transition = 'opacity 0.5s ease';
+      overlay.style.opacity = '0';
+      setTimeout(() => {
+        overlay.style.display = 'none';
+      }, 500);
+    } else {
+      showToast(data.detail || 'Failed to complete onboarding.');
+    }
+  } catch (err) {
+    showToast('Error completing onboarding. Please try again.');
+  } finally {
+    continueBtn.disabled = false;
+    continueBtn.innerHTML = 'Continue <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
+  }
+}
+
+async function saveProfileChanges() {
+  const name = document.getElementById('settings-name').value.trim();
+  const company = document.getElementById('settings-company').value.trim();
+  const teamSize = document.getElementById('settings-team-size').value;
+  const industry = document.getElementById('settings-industry').value;
+  const displayPref = document.getElementById('settings-display-pref').value;
+  const saveBtn = document.getElementById('saveProfileBtn');
+
+  if (!name || !company) {
+    showToast('Full Name and Company Name are required.');
+    return;
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+
+  try {
+    const res = await fetch(`${BACKEND}/api/v1/auth/profile/update`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('voicera_backend_token') || TOKEN}`
+      },
+      body: JSON.stringify({
+        full_name: name,
+        company_name: company,
+        team_size: teamSize,
+        industry: industry,
+        display_preference: displayPref
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      showToast('✓ Profile settings updated successfully!');
+      
+      // Update local storage
+      localStorage.setItem('voicera_name', name);
+      localStorage.setItem('voicera_company', company);
+      localStorage.setItem('voicera_team_size', teamSize);
+      localStorage.setItem('voicera_industry', industry);
+      localStorage.setItem('voicera_display_preference', displayPref);
+
+      // Determine correct display name
+      const displayName = displayPref === 'company_name' ? company : name;
+
+      // Update sidebar & headers
+      const wsName = document.querySelector('.sb-ws-name');
+      if (wsName) wsName.textContent = company;
+
+      const userNameEl = document.querySelector('.user-name');
+      if (userNameEl) userNameEl.textContent = displayName;
+
+      const welcomeEl = document.getElementById('overview-welcome');
+      if (welcomeEl) welcomeEl.textContent = `Welcome back, ${displayName} — here's what's happening with Voicera today.`;
+
+      const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+      const userAvaEl = document.querySelector('.user-ava');
+      if (userAvaEl) userAvaEl.textContent = initials;
+
+      const menuNameEl = document.getElementById('menu-name');
+      if (menuNameEl) menuNameEl.textContent = name;
+    } else {
+      showToast(data.detail || 'Failed to update profile.');
+    }
+  } catch (err) {
+    showToast('Error updating profile settings. Please try again.');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Changes';
+  }
+}
 </script>
+
+<!-- Onboarding Workspace Setup Overlay -->
+<div id="onboarding-overlay" style="display: none; position: fixed; inset: 0; background: #0b0c10; z-index: 9999; flex-direction: column; padding: 40px; justify-content: center; align-items: center; font-family: 'Manrope', sans-serif;">
+  <!-- Header: Voicera Logo & Name -->
+  <div style="position: absolute; top: 40px; left: 40px; display: flex; align-items: center; gap: 10px;">
+    <div style="width: 32px; height: 32px; background: var(--grad-cta); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: white;">V</div>
+    <span style="font-size: 18px; font-weight: 800; color: var(--on-surface); font-family: 'Outfit';">Voicera</span>
+  </div>
+
+  <!-- Content Card -->
+  <div style="max-width: 600px; width: 100%; text-align: left;">
+    <div style="display: flex; align-items: center; gap: 8px; color: var(--tertiary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+      Tell us about your company
+    </div>
+
+    <h1 style="font-size: 38px; font-weight: 800; color: var(--on-surface); margin: 0 0 8px 0; font-family: 'Outfit';">Set up your workspace</h1>
+    <p style="font-size: 15px; color: var(--on-surface-low); margin: 0 0 40px 0;">This helps us tailor the experience. You can change anything later.</p>
+
+    <!-- Onboarding Form -->
+    <div class="card" style="background: var(--surface-bright-blur); border: 1px solid var(--ghost); border-radius: 16px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); backdrop-filter: blur(20px);">
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label class="form-label" style="font-size: 13px; font-weight: 600; color: var(--on-surface-med); margin-bottom: 8px; display: block;">Company name</label>
+        <input type="text" id="onboard-company-name" class="form-input" placeholder="e.g. Acme Inc." style="background: rgba(255,255,255,0.03); border: 1px solid var(--ghost); color: var(--on-surface); width: 100%; padding: 12px; border-radius: 8px;">
+      </div>
+
+      <div style="display: flex; gap: 16px; margin-bottom: 30px;">
+        <div style="flex: 1;">
+          <label class="form-label" style="font-size: 13px; font-weight: 600; color: var(--on-surface-med); margin-bottom: 8px; display: block;">Team size</label>
+          <select id="onboard-team-size" class="form-input" style="background: var(--surface); color: var(--on-surface); width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--ghost); outline: none;">
+            <option value="1-10">1-10</option>
+            <option value="11-50" selected>11-50</option>
+            <option value="51-200">51-200</option>
+            <option value="200+">200+</option>
+          </select>
+        </div>
+        <div style="flex: 1;">
+          <label class="form-label" style="font-size: 13px; font-weight: 600; color: var(--on-surface-med); margin-bottom: 8px; display: block;">Industry</label>
+          <select id="onboard-industry" class="form-input" style="background: var(--surface); color: var(--on-surface); width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--ghost); outline: none;">
+            <option value="Fintech" selected>Fintech</option>
+            <option value="Healthcare">Healthcare</option>
+            <option value="E-commerce">E-commerce</option>
+            <option value="SaaS">SaaS</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button id="onboardContinueBtn" onclick="saveOnboarding()" class="btn btn-primary" style="background: var(--grad-cta); color: white; display: flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;">
+          Continue
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

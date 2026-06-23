@@ -1522,7 +1522,7 @@ tbody tr[onclick]{cursor:pointer;}
                       &lt;script&gt;<br>
                       &nbsp;&nbsp;new VoiceraWidget({<br>
                       &nbsp;&nbsp;&nbsp;&nbsp;clientId: '<span id="doc-client-id">YOUR_CLIENT_ID</span>',<br>
-                      &nbsp;&nbsp;&nbsp;&nbsp;backendUrl: 'https://voicera-backend-production.up.railway.app'<br>
+                      &nbsp;&nbsp;&nbsp;&nbsp;backendUrl: 'https://voicera-dashboard-production.up.railway.app'<br>
                       &nbsp;&nbsp;});<br>
                       &lt;/script&gt;
                       <button onclick="copyInitCode()" style="position:absolute;top:8px;right:8px;background:#1e2130;border:1px solid #334155;color:#94a3b8;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Copy</button>
@@ -1643,7 +1643,7 @@ tbody tr[onclick]{cursor:pointer;}
 <script>
 const SUPABASE_URL = 'https://zlqefahavxdqfhpejqyd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpscWVmYWhhdnhkcWZocGVqcXlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNzE3NTYsImV4cCI6MjA5Nzc0Nzc1Nn0.IoR3jrcbt1QGSaxLzUt1tqePpQ6a1ORnUPFhZHnimyQ';
-const BACKEND = 'https://voicera-backend-production.up.railway.app';
+const BACKEND = 'https://voicera-dashboard-production.up.railway.app';
 let CLIENT_ID = localStorage.getItem('voicera_client_id') || '70d0188f-ef36-4c79-b0b6-b215e767d859';
 let TOKEN = localStorage.getItem('voicera_backend_token') || '';
 
@@ -1972,7 +1972,7 @@ function nav(page,el){
       const clientIdDisplay = document.getElementById('widget-client-id-display');
       if (clientIdDisplay) clientIdDisplay.textContent = realClientId?.substring(0,8) + '...';
       if (box) {
-        box.textContent = `<script src="https://voicera-landing.teamvoicera7.workers.dev/src/widget.js"><\/script>\n<script>\n  new VoiceraWidget({\n    clientId: '${realClientId}',\n    backendUrl: 'https://voicera-backend-production.up.railway.app'\n  });\n<\/script>`;
+        box.textContent = `<script src="https://voicera-landing.teamvoicera7.workers.dev/src/widget.js"><\/script>\n<script>\n  new VoiceraWidget({\n    clientId: '${realClientId}',\n    backendUrl: 'https://voicera-dashboard-production.up.railway.app'\n  });\n<\/script>`;
       }
     }, 100);
 
@@ -2194,7 +2194,7 @@ function setColor(el){
 }
   function copyEmbed() {
     const realClientId = localStorage.getItem('voicera_client_id') || CLIENT_ID;
-    const embedCode = `<script src="https://voicera-landing.teamvoicera7.workers.dev/src/widget.js"><\/script>\n<script>\n  new VoiceraWidget({\n    clientId: '${realClientId}',\n    backendUrl: 'https://voicera-backend-production.up.railway.app'\n  });\n<\/script>`;
+    const embedCode = `<script src="https://voicera-landing.teamvoicera7.workers.dev/src/widget.js"><\/script>\n<script>\n  new VoiceraWidget({\n    clientId: '${realClientId}',\n    backendUrl: 'https://voicera-dashboard-production.up.railway.app'\n  });\n<\/script>`;
     
     const box = document.getElementById('embed-code-box');
     if (box) box.textContent = embedCode;
@@ -2274,7 +2274,7 @@ function setBotConfigTab(tab, el) {
 
   window.copyInitCode = function() {
     const cid = localStorage.getItem('voicera_client_id') || 'YOUR_CLIENT_ID';
-    const code = `<script>\n  new VoiceraWidget({\n    clientId: '${cid}',\n    backendUrl: 'https://voicera-backend-production.up.railway.app'\n  });\n<\/script>`;
+    const code = `<script>\n  new VoiceraWidget({\n    clientId: '${cid}',\n    backendUrl: 'https://voicera-dashboard-production.up.railway.app'\n  });\n<\/script>`;
     navigator.clipboard.writeText(code);
     showToast('Initialization snippet copied!');
   };

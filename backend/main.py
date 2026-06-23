@@ -13,12 +13,13 @@ fastapi_app = FastAPI(
 fastapi_app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://voicera-dashboard.thalathotysujith.workers.dev",
         "https://voicera-dashboard.teamvoicera7.workers.dev",
         "https://voicera-landing.teamvoicera7.workers.dev",
         "https://voicera-superadmin.vercel.app",
         "http://localhost:3000",
         "http://localhost:5173",
-        "*"
+        "http://localhost:8000"
     ],
     allow_credentials=True,
     allow_methods=["*"],
